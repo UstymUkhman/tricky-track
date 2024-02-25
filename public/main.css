@@ -1,0 +1,15 @@
+:root {
+  background: #282828;
+  color: #c7c7c7;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+}
+
+canvas {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}

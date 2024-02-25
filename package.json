@@ -1,0 +1,50 @@
+{
+  "name": "tricky-track",
+  "description": "Racing game with a dynamic track",
+  "homepage": "https://github.com/UstymUkhman/tricky-track#readme",
+  "main": "src/main.js",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UstymUkhman/tricky-track.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UstymUkhman/tricky-track/issues",
+    "email": "ustym.ukhman@gmail.com"
+  },
+  "author": {
+    "name": "Ustym Ukhman",
+    "email": "ustym.ukhman@gmail.com",
+    "url": "https://github.com/UstymUkhman/"
+  },
+  "keywords": [
+    "game",
+    "racing",
+    "ammojs",
+    "threejs",
+    "physics",
+    "3d-game",
+    "racing-game",
+    "ammo-physics"
+  ],
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.161.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.161.2",
+    "vite": "^5.1.4",
+    "vite-plugin-glsl": "^1.2.1"
+  },
+  "engines": {
+    "node": ">= 18.12.1",
+    "pnpm": ">= 8.15.4"
+  }
+}
