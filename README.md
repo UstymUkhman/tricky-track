@@ -1,6 +1,6 @@
 # Tricky Track
 
-> [Havok](https://www.havok.com/) physics engine with [three.js](https://threejs.org/)
+> Racing game with a dynamic track
 
 ![](https://img.shields.io/github/deployments/UstymUkhman/tricky-track/github-pages?style=flat-square)
 ![](https://img.shields.io/github/package-json/v/UstymUkhman/tricky-track?color=orange&style=flat-square)
