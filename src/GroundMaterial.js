@@ -9,19 +9,15 @@ export default class GroundMaterial extends MeshPhongMaterial
 {
     #cellSize = { value: Config.Ground.cell };
 
-    /**
-     * @param {import("three").MeshPhongMaterialParameters} parameters
-     */
-    constructor (parameters)
+    /** @param {import("three").MeshPhongMaterialParameters} parameters */
+    constructor(parameters)
     {
         super(parameters);
         this.setValues(parameters);
     }
 
-    /**
-     * @param {import("three").ShaderLibShader} shader
-     */
-    #updateDefaultVertexShader (shader)
+    /** @param {import("three").ShaderLibShader} shader */
+    #updateDefaultVertexShader(shader)
     {
         shader.vertexShader = `${parsVert}
         ${shader.vertexShader.replace(
@@ -31,10 +27,8 @@ export default class GroundMaterial extends MeshPhongMaterial
         )}`;
     }
 
-    /**
-     * @param {import("three").ShaderLibShader} shader
-     */
-    #updateDefaultFragmentShader (shader)
+    /** @param {import("three").ShaderLibShader} shader */
+    #updateDefaultFragmentShader(shader)
     {
         shader.fragmentShader = `${parsFrag}
         ${shader.fragmentShader.replace(
@@ -43,10 +37,8 @@ export default class GroundMaterial extends MeshPhongMaterial
         )}`;
     }
 
-    /**
-     * @param {import("three").ShaderLibShader} shader
-     */
-    onBeforeCompile (shader)
+    /** @param {import("three").ShaderLibShader} shader */
+    onBeforeCompile(shader)
     {
         shader.uniforms.cellSize = this.#cellSize;
         this.#updateDefaultFragmentShader(shader);
@@ -54,10 +46,8 @@ export default class GroundMaterial extends MeshPhongMaterial
         this.needsUpdate = true;
     }
 
-    /**
-     * @param {number} size
-     */
-    set cell (size)
+    /** @param {number} size */
+    set cell(size)
     {
         this.#cellSize.value = size;
     }

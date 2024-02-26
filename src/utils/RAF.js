@@ -15,7 +15,7 @@ class RAF
     /** @type {Callback[]} */ #callbacks = [];
 
     /** @param {number} time */
-    #update (time)
+    #update(time)
     {
         this.#raf = requestAnimationFrame(this.#onUpdate);
         const delta = time - (this.#lastTime || 0);
@@ -27,27 +27,27 @@ class RAF
     }
 
     /** @param {Callback} callback */
-    add (callback)
+    add(callback)
     {
         const index = this.#callbacks.indexOf(callback);
         index === -1 && this.#callbacks.push(callback);
     }
 
     /** @param {Callback} callback */
-    remove (callback)
+    remove(callback)
     {
         const index = this.#callbacks.indexOf(callback);
         index !== -1 && this.#callbacks.splice(index, 1);
     }
 
-    dispose ()
+    dispose()
     {
         cancelAnimationFrame(this.#raf);
         this.#callbacks.length = 0;
     }
 
     /** @param {boolean} paused */
-    set pause (paused)
+    set pause(paused)
     {
         if (this.#paused !== paused)
             ((this.#paused = paused))

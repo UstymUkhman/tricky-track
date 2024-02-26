@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
 
-export default ({ mode }) =>
+export default({ mode }) =>
     defineConfig(
     {
         base: "./",
@@ -13,6 +13,11 @@ export default ({ mode }) =>
             conditions: ["development", "browser"]
         },
 
+        define:
+        {
+            DEBUG: mode !== "production" && false
+        },
+
         plugins:
         [
             glsl({
@@ -20,11 +25,6 @@ export default ({ mode }) =>
                 root: "/src/shaders/"
             })
         ],
-
-        define:
-        {
-            DEBUG: mode !== "production" && false
-        },
 
         server:
         {

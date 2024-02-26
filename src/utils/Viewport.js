@@ -23,13 +23,13 @@ class Viewport
     #root = document.documentElement.style;
     /** @type {Callback[]} */ #callbacks = [];
 
-    constructor ()
+    constructor()
     {
         window.addEventListener("resize", this.#update, false);
         this.#updateSize();
     }
 
-    #updateSize ()
+    #updateSize()
     {
         this.#width = window.innerWidth;
         this.#height = window.innerHeight;
@@ -44,27 +44,27 @@ class Viewport
     }
 
     /** @param {Callback} callback */
-    addResizeCallback (callback)
+    addResizeCallback(callback)
     {
         const index = this.#callbacks.indexOf(callback);
         index === -1 && this.#callbacks.push(callback);
     }
 
     /** @param {Callback} callback */
-    removeResizeCallback (callback)
+    removeResizeCallback(callback)
     {
         const index = this.#callbacks.indexOf(callback);
         index !== -1 && this.#callbacks.splice(index, 1);
     }
 
-    dispose ()
+    dispose()
     {
         window.removeEventListener("resize", this.#update, false);
         this.#callbacks.length = 0;
     }
 
     /** @returns {Size} */
-    get size ()
+    get size()
     {
         return {
             height: this.#height,
