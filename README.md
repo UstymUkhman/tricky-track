@@ -1,6 +1,6 @@
 # Tricky Track
 
-> Racing game with a dynamic track
+> Racing game with procedurally generated track
 
 ![](https://img.shields.io/github/deployments/UstymUkhman/tricky-track/github-pages?style=flat-square)
 ![](https://img.shields.io/github/package-json/v/UstymUkhman/tricky-track?color=orange&style=flat-square)

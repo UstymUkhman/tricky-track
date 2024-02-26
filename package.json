@@ -1,6 +1,6 @@
 {
   "name": "tricky-track",
-  "description": "Racing game with a dynamic track",
+  "description": "Racing game with procedurally generated track",
   "homepage": "https://github.com/UstymUkhman/tricky-track#readme",
   "main": "src/main.js",
   "version": "0.0.0",
@@ -27,8 +27,10 @@
     "threejs",
     "physics",
     "3d-game",
+    "procedural",
+    "generation",
     "racing-game",
-    "ammo-physics"
+    "procedural-generation"
   ],
   "scripts": {
     "start": "vite",
