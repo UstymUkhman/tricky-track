@@ -28,7 +28,7 @@ class EventEmitter
         this.#target.addEventListener(name, callback, false);
     }
 
-    /** @param {string} name @param {unknown | undefined} data */
+    /** @param {string} name @param {unknown} data */
     dispatch(name, data)
     {
         const event = this.#events.get(name);

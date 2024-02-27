@@ -7,7 +7,7 @@
  * @property {EventParams} params
  */
 
-import WebWorker from "./worker?worker";
+import WebWorker from "./Worker?worker";
 
 export default class Worker
 {

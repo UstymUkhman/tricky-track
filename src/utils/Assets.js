@@ -110,26 +110,26 @@ class Manager extends LoadingManager
         });
     }
 
-    /** @override @param {number} loaded @param {number} total */
-    onProgress(_, loaded, total)
+    /** @override @param {string} url @param {number} loaded @param {number} total */
+    onProgress = (url, loaded, total) =>
     {
-        Emitter.dispatch(Loading.Progress, loaded * 100 / total);
+        url && Emitter.dispatch(Loading.Progress, loaded * 100 / total);
     };
 
     /** @override @param {string} url */
-    onError(url)
+    onError = (url) =>
     {
         console.error(`Error occurred loading ${url}.`);
     };
 
     /** @override */
-    onStart()
+    onStart = () =>
     {
         Emitter.dispatch(Loading.Start);
     };
 
     /** @override */
-    onLoad()
+    onLoad = () =>
     {
         Emitter.dispatch(Loading.Complete);
     };

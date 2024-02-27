@@ -11,13 +11,15 @@ import { Scene } from "three/src/scenes/Scene";
 import { Mesh } from "three/src/objects/Mesh";
 import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
+import { Emitter } from "../utils/Events";
 import Ground from "../materials/Ground";
 import Viewport from "../utils/Viewport";
 import { PI } from "../utils/Number";
 import RAF from "../utils/RAF";
+import Cars from "../cars";
 
 import {
-    DoubleSide,
+    FrontSide,
     SRGBColorSpace,
     PCFSoftShadowMap,
     ACESFilmicToneMapping
@@ -29,9 +31,13 @@ export default class Sandbox
     /** @type {PerspectiveCamera} */ #camera;
     /** @type {WebGLRenderer} */ #renderer;
 
+    #addGameObject = this.#add.bind(this);
     #update = this.#render.bind(this);
+    #scale = this.#resize.bind(this);
+
     /** @type {Stats} */ #stats;
     #scene = new Scene();
+    #cars = new Cars();
 
     constructor()
     {
@@ -41,12 +47,24 @@ export default class Sandbox
         this.#createCamera();
         this.#createLights();
         this.#createGround();
+        this.#createEvents();
 
         this.#createRenderer();
         this.#createControls();
 
         RAF.add(this.#update);
         RAF.pause = false;
+    }
+
+    #createStats()
+    {
+        if (document.body.lastElementChild?.id !== "stats")
+        {
+            this.#stats = new Stats();
+            this.#stats.showPanel(0);
+            this.#stats.dom.id = "stats";
+            document.body.appendChild(this.#stats.dom);
+        }
     }
 
     #createScene()
@@ -94,13 +112,19 @@ export default class Sandbox
     {
         const ground = new Mesh(
             new PlaneGeometry(500, 500),
-            new Ground({ side: DoubleSide, color: Color.NAMES.white })
+            new Ground({ side: FrontSide, color: Color.NAMES.white })
         );
 
         ground.receiveShadow = true;
         ground.rotateX(-PI.d2);
 
         this.#scene.add(ground);
+    }
+
+    #createEvents()
+    {
+        Emitter.add("Scene::Add", this.#addGameObject);
+        Viewport.addResizeCallback(this.#scale);
     }
 
     #createRenderer()
@@ -130,29 +154,12 @@ export default class Sandbox
         this.#orbitControls = new OrbitControls(this.#camera, this.#canvas);
         this.#orbitControls.enablePan = import.meta.env.DEV;
 
-        Viewport.addResizeCallback(this.#resize.bind(this));
-
-        this.#orbitControls.target.set(0, 0, -25);
         this.#orbitControls.enableDamping = true;
-
         this.#orbitControls.maxPolarAngle = 1.5;
         this.#orbitControls.minPolarAngle = 0.5;
 
         this.#orbitControls.rotateSpeed = 0.5;
         this.#orbitControls.enableZoom = true;
-
-        this.#orbitControls.update();
-    }
-
-    #createStats()
-    {
-        if (document.body.lastElementChild?.id !== "stats")
-        {
-            this.#stats = new Stats();
-            this.#stats.showPanel(0);
-            this.#stats.dom.id = "stats";
-            document.body.appendChild(this.#stats.dom);
-        }
     }
 
     /** @param {number} width @param {number} height @param {number} ratio */
@@ -171,6 +178,12 @@ export default class Sandbox
         this.#renderer.render(this.#scene, this.#camera);
 
         this.#stats?.end();
+    }
+
+    /** @param {import("../utils/Events").Event} event */
+    #add(event)
+    {
+        this.#scene.add(event.data);
     }
 
     /** @param {import("three").Material} material */
@@ -201,31 +214,33 @@ export default class Sandbox
     {
         node.traverse(child =>
         {
-            if (child instanceof Mesh)
-            {
-                !child.material
-                    ? (child = undefined)
-                    : !Array.isArray(child.material)
-                        ? this.disposeMaterial(child.material)
-                        : child.material.forEach(this.#disposeMaterial);
+            if (child.material)
+                !Array.isArray(child.material)
+                    ? this.#disposeMaterial(child.material)
+                    : child.material.forEach(this.#disposeMaterial);
 
-                child.geometry?.dispose();
-            }
-
+            child.geometry?.dispose();
             child = undefined;
         });
+    }
+
+    #removeEvents()
+    {
+        Emitter.remove("Scene::Add", this.#addGameObject);
+        Viewport.removeResizeCallback(this.#scale);
     }
 
     dispose()
     {
         this.#disposeNode(this.#scene);
         this.#orbitControls.dispose();
+
         this.#stats?.dom.remove();
-
         RAF.remove(this.#update);
-
         this.#renderer.dispose();
+
         this.#canvas.remove();
+        this.#removeEvents();
         this.#scene.clear();
     }
 

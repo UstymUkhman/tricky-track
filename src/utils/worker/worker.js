@@ -1,15 +1,15 @@
-/** @type {Worker} */ export const worker = self;
+/** @type {Worker} */ export const Worker = self;
 
-worker.onerror = error => console.error(error);
+Worker.onerror = error => console.error(error);
 
-worker.onmessage = message =>
+Worker.onmessage = message =>
 {
     const { event, params } = message.data;
 
     console.info("Worker Event:", event);
     console.table(params);
 
-    worker.postMessage({
+    Worker.postMessage({
         response: params,
         name: event
     });
