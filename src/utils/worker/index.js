@@ -7,7 +7,7 @@
  * @property {EventParams} params
  */
 
-import WebWorker from './worker?worker';
+import WebWorker from "./worker?worker";
 
 export default class Worker
 {
@@ -28,7 +28,7 @@ export default class Worker
     }
 
     /** @param {ErrorEvent} error */
-    #onError (error)
+    #onError(error)
     {
         console.error(error);
     }

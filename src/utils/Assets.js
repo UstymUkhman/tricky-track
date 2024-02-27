@@ -1,11 +1,11 @@
-import { CubeTextureLoader } from 'three/src/loaders/CubeTextureLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { LoadingManager } from 'three/src/loaders/LoadingManager';
-import { TextureLoader } from 'three/src/loaders/TextureLoader';
-import { CubeTexture } from 'three/src/textures/CubeTexture';
-import { AudioLoader } from 'three/src/loaders/AudioLoader';
-import { RGBAFormat } from 'three/src/constants';
-import { Emitter } from './Events';
+import { CubeTextureLoader } from "three/src/loaders/CubeTextureLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { LoadingManager } from "three/src/loaders/LoadingManager";
+import { TextureLoader } from "three/src/loaders/TextureLoader";
+import { CubeTexture } from "three/src/textures/CubeTexture";
+import { AudioLoader } from "three/src/loaders/AudioLoader";
+import { RGBAFormat } from "three/src/constants";
+import { Emitter } from "./Events";
 
 class Manager extends LoadingManager
 {
@@ -14,7 +14,7 @@ class Manager extends LoadingManager
     #texture = new TextureLoader(this);
     #cubeTexture = new CubeTextureLoader(this);
 
-    #textures = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
+    #textures = ["px", "nx", "py", "ny", "pz", "nz"];
 
     #getPromiseCallbacks(resolve, reject)
     {
@@ -38,7 +38,7 @@ class Manager extends LoadingManager
     }
 
     /** @param {string | string[]} images @param {string[] | undefined} textures */
-    async loadCubeTexture(images, textures, ext = 'png')
+    async loadCubeTexture(images, textures, ext = "png")
     {
         return await new Promise((resolve, reject) =>
         {
@@ -69,7 +69,7 @@ class Manager extends LoadingManager
         {
             const promise = this.#getPromiseCallbacks(resolve, reject);
 
-            this.#gltf.setPath('./models/').load(
+            this.#gltf.setPath("./models/").load(
                 file,
                 promise.onLoad,
                 promise.onProgress,
@@ -85,7 +85,7 @@ class Manager extends LoadingManager
         {
             const promise = this.#getPromiseCallbacks(resolve, reject);
 
-            this.#texture.setPath('./images/').load(
+            this.#texture.setPath("./images/").load(
                 file,
                 promise.onLoad,
                 promise.onProgress,
@@ -101,7 +101,7 @@ class Manager extends LoadingManager
         {
             const promise = this.#getPromiseCallbacks(resolve, reject);
 
-            this.#audio.setPath('./sounds/').load(
+            this.#audio.setPath("./sounds/").load(
                 file,
                 promise.onLoad,
                 promise.onProgress,
@@ -139,7 +139,7 @@ export const Loader = new Manager();
 
 export const Loading =
 {
-    Complete : 'Loading::Complete',
-    Progress : 'Loading::Progress',
-    Start    : 'Loading::Start'
+    Complete : "Loading::Complete",
+    Progress : "Loading::Progress",
+    Start    : "Loading::Start"
 }

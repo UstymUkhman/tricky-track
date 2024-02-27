@@ -1,14 +1,11 @@
 import { MeshPhongMaterial } from "three/src/materials/MeshPhongMaterial";
-import parsVert from "./shaders/ground/pars.vert";
-import mainVert from "./shaders/ground/main.vert";
-import parsFrag from "./shaders/ground/pars.frag";
-import mainFrag from "./shaders/ground/main.frag";
-import Config from "./Config";
+import parsVert from "../shaders/ground/pars.vert";
+import mainVert from "../shaders/ground/main.vert";
+import parsFrag from "../shaders/ground/pars.frag";
+import mainFrag from "../shaders/ground/main.frag";
 
-export default class GroundMaterial extends MeshPhongMaterial
+export default class Ground extends MeshPhongMaterial
 {
-    #cellSize = { value: Config.Ground.cell };
-
     /** @param {import("three").MeshPhongMaterialParameters} parameters */
     constructor(parameters)
     {
@@ -40,15 +37,9 @@ export default class GroundMaterial extends MeshPhongMaterial
     /** @param {import("three").ShaderLibShader} shader */
     onBeforeCompile(shader)
     {
-        shader.uniforms.cellSize = this.#cellSize;
+        shader.uniforms.cellSize = { value: 50 };
         this.#updateDefaultFragmentShader(shader);
         this.#updateDefaultVertexShader(shader);
         this.needsUpdate = true;
-    }
-
-    /** @param {number} size */
-    set cell(size)
-    {
-        this.#cellSize.value = size;
     }
 }

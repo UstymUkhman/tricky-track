@@ -1,4 +1,4 @@
-const Ammo = await (await import('./Ammo')).default();
+const Ammo = await (await import("./Ammo")).default();
 
 class Physics
 {

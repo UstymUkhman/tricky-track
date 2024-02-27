@@ -1,4 +1,4 @@
-import { randomInt, random as randomFloat } from './Number';
+import { randomInt, random as randomFloat } from "./Number";
 
 /** @param {number[]} a */
 export function fisherYates(a, c = a.length, r = 0)
