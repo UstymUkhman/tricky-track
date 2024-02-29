@@ -1,59 +1,53 @@
 import { DirectionalLightHelper } from "three/src/helpers/DirectionalLightHelper";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
-import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
-import { AmbientLight } from "three/src/lights/AmbientLight";
 import Stats from "three/examples/jsm/libs/stats.module";
 
-import { Scene } from "three/src/scenes/Scene";
+import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
-import { Emitter } from "../utils/Events";
 import Ground from "../materials/Ground";
-import Viewport from "../utils/Viewport";
+
 import { PI } from "../utils/Number";
+import Physics from "../physics";
 import RAF from "../utils/RAF";
+import Level from "./Level";
 import Cars from "../cars";
 
-import {
-    FrontSide,
-    SRGBColorSpace,
-    PCFSoftShadowMap,
-    ACESFilmicToneMapping
-} from "three/src/constants";
-
-export default class Sandbox
+export default class Sandbox extends Level
 {
-    /** @type {OrbitControls} */ #orbitControls;
-    /** @type {PerspectiveCamera} */ #camera;
-    /** @type {WebGLRenderer} */ #renderer;
-
-    #addGameObject = this.#add.bind(this);
-    #update = this.#render.bind(this);
-    #scale = this.#resize.bind(this);
-
+    /** @type {OrbitControls} */ #controls;
+    #tick = this.#update.bind(this);
     /** @type {Stats} */ #stats;
-    #scene = new Scene();
     #cars = new Cars();
 
     constructor()
     {
-        this.#createStats();
-        this.#createScene();
+        super();
 
-        this.#createCamera();
+        this.#setScene();
+        this.#setCamera();
+        this.#createStats();
+
         this.#createLights();
         this.#createGround();
-        this.#createEvents();
-
-        this.#createRenderer();
         this.#createControls();
 
-        RAF.add(this.#update);
+        RAF.add(this.#tick);
         RAF.pause = false;
+    }
+
+    #setScene()
+    {
+        this.scene.background = new Color(Color.NAMES.whitesmoke);
+        this.scene.fog = new Fog(Color.NAMES.whitesmoke, 100, 250);
+    }
+
+    #setCamera()
+    {
+        this.camera.position.set(0, 25, 50);
     }
 
     #createStats()
@@ -67,21 +61,8 @@ export default class Sandbox
         }
     }
 
-    #createScene()
-    {
-        this.#scene.background = new Color(Color.NAMES.whitesmoke);
-        this.#scene.fog = new Fog(Color.NAMES.whitesmoke, 100, 250);
-    }
-
-    #createCamera()
-    {
-        this.#camera = new PerspectiveCamera(50, Viewport.size.ratio, 0.1, 500);
-        this.#camera.position.set(0, 25, 50);
-    }
-
     #createLights()
     {
-        const ambient = new AmbientLight(Color.NAMES.white, 0.5);
         const directional = new DirectionalLight(Color.NAMES.white, 2);
         const helper = new DirectionalLightHelper(directional, 10, Color.NAMES.yellow);
 
@@ -103,9 +84,8 @@ export default class Sandbox
         directional.rotation.set(1, 0, 0);
         directional.intensity = 2;
 
-        this.#scene.add(directional);
-        this.#scene.add(ambient);
-        this.#scene.add(helper);
+        this.scene.add(directional);
+        this.scene.add(helper);
     }
 
     #createGround()
@@ -115,137 +95,41 @@ export default class Sandbox
             new Ground({ side: FrontSide, color: Color.NAMES.white })
         );
 
-        ground.receiveShadow = true;
         ground.rotateX(-PI.d2);
+        ground.receiveShadow = true;
 
-        this.#scene.add(ground);
-    }
-
-    #createEvents()
-    {
-        Emitter.add("Scene::Add", this.#addGameObject);
-        Viewport.addResizeCallback(this.#scale);
-    }
-
-    #createRenderer()
-    {
-        this.#renderer = new WebGLRenderer({
-            canvas: document.getElementById("application"),
-            powerPreference: "high-performance",
-            antialias: true
-        });
-
-        this.#renderer.debug.checkShaderErrors = import.meta.env.DEV;
-
-        this.#renderer.setSize(Viewport.size.width, Viewport.size.height);
-        this.#renderer.setClearColor(Color.NAMES.whitesmoke, 1);
-        this.#renderer.setPixelRatio(devicePixelRatio);
-
-        this.#renderer.outputColorSpace = SRGBColorSpace;
-        this.#renderer.toneMapping = ACESFilmicToneMapping;
-        this.#renderer.toneMappingExposure = 1.5;
-
-        this.#renderer.shadowMap.enabled = true;
-        this.#renderer.shadowMap.type = PCFSoftShadowMap;
+        Physics.addStaticPlane(ground);
+        this.scene.add(ground);
     }
 
     #createControls()
     {
-        this.#orbitControls = new OrbitControls(this.#camera, this.#canvas);
-        this.#orbitControls.enablePan = import.meta.env.DEV;
+        this.#controls = new OrbitControls(this.camera, this.canvas);
+        this.#controls.enablePan = import.meta.env.DEV;
 
-        this.#orbitControls.enableDamping = true;
-        this.#orbitControls.maxPolarAngle = 1.5;
-        this.#orbitControls.minPolarAngle = 0.5;
+        this.#controls.enableDamping = true;
+        this.#controls.maxPolarAngle = 1.5;
+        this.#controls.minPolarAngle = 0.5;
 
-        this.#orbitControls.rotateSpeed = 0.5;
-        this.#orbitControls.enableZoom = true;
+        this.#controls.rotateSpeed = 0.5;
+        this.#controls.enableZoom = true;
     }
 
-    /** @param {number} width @param {number} height @param {number} ratio */
-    #resize(width, height, ratio)
-    {
-        this.#camera.aspect = ratio;
-        this.#camera.updateProjectionMatrix();
-        this.#renderer.setSize(width, height);
-    }
-
-    #render()
+    #update()
     {
         this.#stats?.begin();
+        this.#controls.update();
 
-        this.#orbitControls.update();
-        this.#renderer.render(this.#scene, this.#camera);
-
+        super.update();
         this.#stats?.end();
     }
 
-    /** @param {import("../utils/Events").Event} event */
-    #add(event)
-    {
-        this.#scene.add(event.data);
-    }
-
-    /** @param {import("three").Material} material */
-    #disposeMaterial(material)
-    {
-        material.displacementMap?.dispose();
-        material.metalnessMap?.dispose();
-        material.roughnessMap?.dispose();
-
-        material.emissiveMap?.dispose();
-        material.gradientMap?.dispose();
-        material.specularMap?.dispose();
-
-        material.normalMap?.dispose();
-        material.alphaMap?.dispose();
-        material.lightMap?.dispose();
-
-        material.bumpMap?.dispose();
-        material.envMap?.dispose();
-        material.aoMap?.dispose();
-        material.map?.dispose();
-
-        material.dispose();
-    }
-
-    /** @param {import("three").Object3D} node */
-    #disposeNode(node)
-    {
-        node.traverse(child =>
-        {
-            if (child.material)
-                !Array.isArray(child.material)
-                    ? this.#disposeMaterial(child.material)
-                    : child.material.forEach(this.#disposeMaterial);
-
-            child.geometry?.dispose();
-            child = undefined;
-        });
-    }
-
-    #removeEvents()
-    {
-        Emitter.remove("Scene::Add", this.#addGameObject);
-        Viewport.removeResizeCallback(this.#scale);
-    }
-
+    /** @override */
     dispose()
     {
-        this.#disposeNode(this.#scene);
-        this.#orbitControls.dispose();
-
         this.#stats?.dom.remove();
-        RAF.remove(this.#update);
-        this.#renderer.dispose();
-
-        this.#canvas.remove();
-        this.#removeEvents();
-        this.#scene.clear();
-    }
-
-    get #canvas()
-    {
-        return this.#renderer.domElement;
+        this.#controls.dispose();
+        RAF.remove(this.#tick);
+        super.dispose();
     }
 }
