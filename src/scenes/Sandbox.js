@@ -18,10 +18,10 @@ import Cars from "../cars";
 
 export default class Sandbox extends Level
 {
+    #cars = new Cars(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
     #tick = this.#update.bind(this);
     /** @type {Stats} */ #stats;
-    #cars = new Cars();
 
     constructor()
     {
@@ -36,7 +36,6 @@ export default class Sandbox extends Level
         this.#createControls();
 
         RAF.add(this.#tick);
-        RAF.pause = false;
     }
 
     #setScene()
@@ -118,9 +117,11 @@ export default class Sandbox extends Level
     #update()
     {
         this.#stats?.begin();
-        this.#controls.update();
 
+        this.#controls.update();
+        this.#cars.update();
         super.update();
+
         this.#stats?.end();
     }
 

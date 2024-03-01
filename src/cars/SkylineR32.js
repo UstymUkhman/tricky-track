@@ -1,46 +1,53 @@
-import { Emitter } from "../utils/Events";
-import { Loader } from '../utils/Assets';
 import Car from "./Car";
+import { Emitter } from "../utils/Events";
 
 export default class SkylineR32 extends Car
 {
     constructor()
     {
-        super();
-        this.#load();
+        super(800);
     }
 
-    async #load()
+    /** @param {import("three").Group[]} models */
+    #add([chassis, wheel])
     {
-        const [chasee, wheel] = await Promise.all(
-        [
-            Loader.loadGLTF("chasee.glb"),
-            Loader.loadGLTF("wheel.glb")
-        ]);
+        chassis.position.y = -5.3;
+        chassis.rotation.y = Math.PI;
+        chassis.scale.setScalar(10);
+        Emitter.dispatch("Scene::Add", chassis);
 
-        chasee.scene.position.y = -5.3;
-        chasee.scene.rotation.y = Math.PI;
-        chasee.scene.scale.setScalar(10);
-        Emitter.dispatch("Scene::Add", chasee.scene);
+        const frontRight = wheel.clone();
+        frontRight.rotation.y = Math.PI;
+        frontRight.scale.setScalar(10);
+        frontRight.position.set(-11.9, -5.3, 0);
+        Emitter.dispatch("Scene::Add", frontRight);
 
-        const topRight = wheel.scene.clone();
-        topRight.rotation.y = Math.PI;
-        topRight.scale.setScalar(10);
-        topRight.position.set(-11.9, -5.3, 0);
-        Emitter.dispatch("Scene::Add", topRight);
+        const backRight = frontRight.clone();
+        backRight.position.z = 19.2;
+        Emitter.dispatch("Scene::Add", backRight);
 
-        const bottomRight = topRight.clone();
-        bottomRight.position.z = 19.2;
-        Emitter.dispatch("Scene::Add", bottomRight);
+        const backLeft = wheel.clone();
+        backLeft.rotation.x = -2.5;
+        backLeft.scale.setScalar(10);
+        backLeft.position.set(11.5, 3.85, 22.2);
+        Emitter.dispatch("Scene::Add", backLeft);
 
-        const bottomLeft = wheel.scene.clone();
-        bottomLeft.rotation.x = -2.5;
-        bottomLeft.scale.setScalar(10);
-        bottomLeft.position.set(11.5, 3.85, 22.2);
-        Emitter.dispatch("Scene::Add", bottomLeft);
+        const frontLeft = backLeft.clone();
+        frontLeft.position.z = 3;
+        Emitter.dispatch("Scene::Add", frontLeft);
 
-        const topLeft = bottomLeft.clone();
-        topLeft.position.z = 3;
-        Emitter.dispatch("Scene::Add", topLeft);
+        super.add(chassis, [frontLeft, frontRight, backLeft, backRight]);
+    }
+
+    /** @override */
+    async load()
+    {
+        this.#add(await super.load("chassis.glb", "wheel.glb"));
+    }
+
+    /** @override */
+    update()
+    {
+        super.update();
     }
 }
