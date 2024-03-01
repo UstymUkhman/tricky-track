@@ -15,6 +15,9 @@ import {
     GROUP_DYNAMIC,
     RIGID_FRICTION,
     RIGID_RESTITUTION,
+    RIGID_LINEAR_FACTOR,
+    RIGID_ANGULAR_FACTOR,
+    DISABLE_DEACTIVATION,
     RIGID_LINEAR_DAMPING,
     RIGID_ANGULAR_DAMPING
 } from "./constants";
@@ -28,8 +31,8 @@ class Physics
     #linearDamping = RIGID_LINEAR_DAMPING;
     #angularDamping = RIGID_ANGULAR_DAMPING;
 
-    #linearFactor = new Vector3(1.0, 1.0, 1.0);
-    #angularFactor = new Vector3(1.0, 1.0, 1.0);
+    #left = this.#Engine.btVector3(-1, 0, 0);
+    #down = this.#Engine.btVector3(0, -1, 0);
     #transform = new this.#Engine.btTransform();
 
     /** @type {DynamicBody[]} */ #dynamicBodies = [];
@@ -42,6 +45,9 @@ class Physics
     #world = new this.#Engine.btDiscreteDynamicsWorld(
         this.#dispatcher, this.#broadphase, this.#solver, this.#collision
     );
+
+    #linearFactor = new Vector3(RIGID_LINEAR_FACTOR, RIGID_LINEAR_FACTOR, RIGID_LINEAR_FACTOR);
+    #angularFactor = new Vector3(RIGID_ANGULAR_FACTOR, RIGID_ANGULAR_FACTOR, RIGID_ANGULAR_FACTOR);
 
     constructor()
     {
@@ -77,6 +83,8 @@ class Physics
         body.setAngularFactor(new this.#Engine.btVector3(...this.#angularFactor));
         body.setLinearFactor(new this.#Engine.btVector3(...this.#linearFactor));
         body.setDamping(this.#linearDamping, this.#angularDamping);
+
+        body.setActivationState(DISABLE_DEACTIVATION);
         body.setRestitution(this.#restitution);
         body.setFriction(this.#friction);
 
@@ -109,6 +117,47 @@ class Physics
         ), mass);
     }
 
+    /**
+     * @param {any} vehicle
+     * @param {import("three").Vector3} position
+     * @param {number} radius
+     * @param {any} tuning
+     * @param {boolean} front
+     */
+    addWheel(vehicle, position, radius, tuning, front)
+    {
+        const wheel = vehicle.addWheel(
+            this.#Engine.btVector3(...position),
+            this.#down,
+            this.#left,
+            0.6,
+            radius,
+            tuning,
+            front
+        );
+
+        wheel.set_m_wheelsDampingCompression(4.4);
+        wheel.set_m_wheelsDampingRelaxation(2.3);
+        wheel.set_m_suspensionStiffness(20);
+        wheel.set_m_rollInfluence(0.2);
+        wheel.set_m_frictionSlip(1e3);
+    }
+
+    /** @param {import("three").Mesh} mesh @param {any} tuning @param {number} mass */
+    addVehicle(mesh, tuning, mass)
+    {
+        this.addDynamicBox(mesh, mass);
+        const { body } = this.#dynamicBodies.at(-1);
+
+        const raycaster = new this.#Engine.btDefaultVehicleRaycaster(this.#world);
+        const vehicle = new this.#Engine.btRaycastVehicle(tuning, body, raycaster);
+
+        vehicle.setCoordinateSystem(0, 1, 2);
+        this.#world.addAction(vehicle);
+
+        return vehicle;
+    }
+
     /** @param {import("three").Mesh} mesh */
     addStaticPlane(mesh)
     {
@@ -133,6 +182,11 @@ class Physics
         }
 
         this.#world.stepSimulation(delta, 10);
+    }
+
+    get vehicleTuning()
+    {
+        return new this.#Engine.btVehicleTuning();
     }
 }
 
