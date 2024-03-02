@@ -1,7 +1,7 @@
 /**
  * @typedef {object} DynamicBody
  * @property {import("three").Mesh} mesh
- * @property {any} body
+ * @property {object} body
  */
 
 const Ammo = await (await import("./Ammo")).default();
@@ -9,10 +9,7 @@ import { Vector3 } from "three/src/math/Vector3";
 import { PI } from "../utils/Number";
 
 import {
-    MASK_ALL,
-    GROUP_STATIC,
     RIGID_MARGIN,
-    GROUP_DYNAMIC,
     RIGID_FRICTION,
     RIGID_RESTITUTION,
     RIGID_LINEAR_FACTOR,
@@ -55,12 +52,12 @@ class Physics
     }
 
     /**
-     * @param {unknown} shape
+     * @param {object} shape
      * @param {import("three").Vector3} position
      * @param {import("three").Quaternion} quaternion
      * @param {number} mass
      * @param {number} margin
-     * @returns {any} body
+     * @returns {object} body
      */
     #createRigidBody(shape, position, quaternion, mass = 0, margin = RIGID_MARGIN)
     {
@@ -91,20 +88,18 @@ class Physics
         return body;
     }
 
-    /** @param {import("three").Mesh} mesh @param {unknown} shape @param {number} mass */
+    /** @param {import("three").Mesh} mesh @param {object} shape @param {number} mass */
     #addDynamicBody(mesh, shape, mass = 0)
     {
         const body = this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone(), mass);
-        this.#world.addRigidBody(body, GROUP_DYNAMIC, MASK_ALL);
         this.#dynamicBodies.push({ mesh, body });
+        this.#world.addRigidBody(body);
     }
 
-    /** @param {import("three").Mesh} mesh @param {unknown} shape */
+    /** @param {import("three").Mesh} mesh @param {object} shape */
     #addStaticBody(mesh, shape)
     {
-        this.#world.addRigidBody(this.#createRigidBody(
-            shape, mesh.position.clone(), mesh.quaternion.clone()
-        ), GROUP_STATIC, MASK_ALL);
+        this.#world.addRigidBody(this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone()));
     }
 
     /** @param {import("three").Mesh} mesh @param {number} mass */
@@ -118,10 +113,10 @@ class Physics
     }
 
     /**
-     * @param {any} vehicle
+     * @param {object} vehicle
      * @param {import("three").Vector3} position
      * @param {number} radius
-     * @param {any} tuning
+     * @param {object} tuning
      * @param {boolean} front
      */
     addWheel(vehicle, position, radius, tuning, front)
@@ -143,7 +138,7 @@ class Physics
         wheel.set_m_frictionSlip(1e3);
     }
 
-    /** @param {import("three").Mesh} mesh @param {any} tuning @param {number} mass */
+    /** @param {import("three").Mesh} mesh @param {object} tuning @param {number} mass @returns {object} vehicle */
     addVehicle(mesh, tuning, mass)
     {
         this.addDynamicBox(mesh, mass);
@@ -184,6 +179,7 @@ class Physics
         this.#world.stepSimulation(delta, 10);
     }
 
+    /** @returns {object} */
     get vehicleTuning()
     {
         return new this.#Engine.btVehicleTuning();

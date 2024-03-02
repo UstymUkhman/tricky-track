@@ -10,11 +10,11 @@ import Physics from "../physics";
 
 export default class Car
 {
-    /** @param {any} */ #vehicle;
     /** @param {number} */ #mass;
+    /** @param {object} */ #vehicle;
 
-    /** @param {any} */ #tuning = Physics.vehicleTuning;
     /** @param {import("three").Group[]} */ #wheels = [];
+    /** @param {object} */ #tuning = Physics.vehicleTuning;
 
     /** @param {number} mass */
     constructor(mass)
@@ -33,11 +33,9 @@ export default class Car
             size.addVectors(box.min, box.max).multiplyScalar(0.5)
         )).computeBoundingBox();
 
-        DEBUG && mesh.attach(new Mesh(geometry,
-            new MeshBasicMaterial({ wireframe: true, color })
-        ));
-
-        return geometry;
+        const computeMesh = new Mesh(geometry, DEBUG && new MeshBasicMaterial({ wireframe: true, color }));
+        DEBUG && mesh.attach(computeMesh);
+        return computeMesh;
     }
 
     /** @param {string} chassis @param {string} wheel */
@@ -49,15 +47,11 @@ export default class Car
     /** @param {import("three").Group} chassis @param {import("three").Group[]} wheels */
     add(chassis, wheels)
     {
-        this.#vehicle = Physics.addVehicle(new Mesh(
-            this.#computeBoundingBox(chassis, Color.NAMES.magenta)), this.#tuning, this.#mass
-        );
+        this.#vehicle = Physics.addVehicle(this.#computeBoundingBox(chassis, Color.NAMES.magenta), this.#tuning, this.#mass);
 
         for (let w = 0, l = wheels.length; w < l; w++)
         {
-            this.#wheels.push(new Mesh(
-                this.#computeBoundingBox(wheels[w], Color.NAMES.magenta, true)
-            ));
+            this.#wheels.push(this.#computeBoundingBox(wheels[w], Color.NAMES.magenta, true));
 
             Physics.addWheel(
                 this.#vehicle,

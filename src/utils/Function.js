@@ -1,14 +1,9 @@
-/**
- * @callback Callback
- * @param {...unknown} args
- * @returns {void}
- */
+/** @callback Callback @param {...unknown} args */
 
 /**
  *
  * @param {Callback} cb
  * @param {number} delay
- * @returns {Callback}
  */
 export function debounce(cb, delay, leading = true)
 {
@@ -31,7 +26,6 @@ export function debounce(cb, delay, leading = true)
  *
  * @param {Callback} cb
  * @param {number} limit
- * @returns {Callback}
  */
 export function throttle(cb, limit)
 {

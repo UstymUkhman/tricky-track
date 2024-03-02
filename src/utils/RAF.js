@@ -2,7 +2,6 @@
  * @callback Callback
  * @param {number} delta
  * @param {number} time
- * @returns {void}
  */
 
 class RAF

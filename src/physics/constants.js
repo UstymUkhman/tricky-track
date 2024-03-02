@@ -49,30 +49,37 @@ export const RIGID_ANGULAR_FACTOR  = 1;
 // export const SOFT_COLLISION       = 0x11;
 
 // Group constants:
-// export const GROUP_NONE      =    0;
-// export const GROUP_DEFAULT   =    1;
-export const GROUP_STATIC    =    2;
-// export const GROUP_KINEMATIC =    4;
-export const GROUP_DYNAMIC   =  128;
-// export const GROUP_SOFT      =  256;
-// export const GROUP_CLOTH     =  512;
-// export const GROUP_ROPE      = 1024;
+// export const GROUP_NONE      =  0;
+// export const GROUP_DEFAULT   =  1;
+// export const GROUP_STATIC    =  2;
+// export const GROUP_KINEMATIC =  4;
+// export const GROUP_DYNAMIC   =  8;
+// export const GROUP_SOFT      = 16;
+// export const GROUP_CLOTH     = 32;
+// export const GROUP_ROPE      = 64;
 
 // Mask constants
-export const MASK_ALL                     = 0xFFFF;
-// export const MASK_SOFT                    = GROUP_SOFT;
-// export const MASK_ROPE                    = GROUP_ROPE;
-// export const MASK_CLOTH                   = GROUP_CLOTH;
+// export const MASK_ALL                     = 0xFFFF;
 // export const MASK_STATIC                  = GROUP_STATIC;
-// export const MASK_DYNAMIC                 = GROUP_DYNAMIC;
 // export const MASK_KINEMATIC               = GROUP_KINEMATIC;
-// export const MASK_STATIC_AND_KINEMATIC    = GROUP_STATIC  | GROUP_KINEMATIC;
-// export const MASK_FLEX                    = GROUP_SOFT    | GROUP_CLOTH     | GROUP_ROPE;
-// export const MASK_RIGID                   = GROUP_STATIC  | GROUP_KINEMATIC | GROUP_DYNAMIC;
+// export const MASK_DYNAMIC                 = GROUP_DYNAMIC;
 
-// export const MASK_NOT_SOFT                = 0xFFFF ^ GROUP_SOFT;
-// export const MASK_NOT_CLOTH               = 0xFFFF ^ GROUP_CLOTH;
-// export const MASK_NOT_STATIC              = 0xFFFF ^ GROUP_STATIC;
-// export const MASK_NOT_DYNAMIC             = 0xFFFF ^ GROUP_DYNAMIC;
-// export const MASK_NOT_KINEMATIC           = 0xFFFF ^ GROUP_KINEMATIC;
-// export const MASK_NOT_STATIC_OR_KINEMATIC = 0xFFFF ^ MASK_STATIC_AND_KINEMATIC;
+// export const MASK_SOFT                    = GROUP_SOFT;
+// export const MASK_CLOTH                   = GROUP_CLOTH;
+// export const MASK_ROPE                    = GROUP_ROPE;
+
+// export const MASK_STATIC_AND_KINEMATIC    = GROUP_STATIC | GROUP_KINEMATIC;
+// export const MASK_RIGID                   = GROUP_STATIC | GROUP_KINEMATIC | GROUP_DYNAMIC;
+// export const MASK_FLEX                    = GROUP_SOFT   | GROUP_CLOTH     | GROUP_ROPE;
+
+// export const MASK_NOT_STATIC              = MASK_ALL ^ GROUP_STATIC;
+// export const MASK_NOT_KINEMATIC           = MASK_ALL ^ GROUP_KINEMATIC;
+// export const MASK_NOT_DYNAMIC             = MASK_ALL ^ GROUP_DYNAMIC;
+
+// export const MASK_NOT_SOFT                = MASK_ALL ^ GROUP_SOFT;
+// export const MASK_NOT_CLOTH               = MASK_ALL ^ GROUP_CLOTH;
+// export const MASK_NOT_ROPE                = MASK_ALL ^ MASK_ROPE;
+
+// export const MASK_NOT_STATIC_OR_KINEMATIC = MASK_ALL ^ MASK_STATIC_AND_KINEMATIC;
+// export const MASK_NOT_RIGID               = MASK_ALL ^ MASK_RIGID;
+// export const MASK_NOT_FLEX                = MASK_ALL ^ MASK_FLEX;

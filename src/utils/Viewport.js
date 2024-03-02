@@ -3,7 +3,6 @@
  * @param {number} width
  * @param {number} height
  * @param {number} ratio
- * @returns {void}
  */
 
 /**

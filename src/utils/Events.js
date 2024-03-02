@@ -1,7 +1,6 @@
 /**
  * @callback Callback
  * @param {Event} event
- * @returns {unknown}
  */
 
 class Event extends CustomEvent

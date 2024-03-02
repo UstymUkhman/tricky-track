@@ -1,5 +1,5 @@
-/** @typedef {Record<string, unknown> | undefined} EventParams */
-/** @callback Callback @param {unknown} data @returns {void} */
+/** @typedef {object | undefined} EventParams */
+/** @callback Callback @param {unknown} data */
 
 /**
  * @typedef {object} EventData
