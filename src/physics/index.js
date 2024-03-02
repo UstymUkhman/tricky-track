@@ -114,28 +114,31 @@ class Physics
 
     /**
      * @param {object} vehicle
+     * @param {object} config
      * @param {import("three").Vector3} position
      * @param {number} radius
      * @param {object} tuning
      * @param {boolean} front
      */
-    addWheel(vehicle, position, radius, tuning, front)
+    addWheel(vehicle, config, position, radius, tuning, front)
     {
         const wheel = vehicle.addWheel(
             this.#Engine.btVector3(...position),
             this.#down,
             this.#left,
-            0.6,
+            config.suspensionRestLength,
             radius,
             tuning,
             front
         );
 
-        wheel.set_m_wheelsDampingCompression(4.4);
-        wheel.set_m_wheelsDampingRelaxation(2.3);
-        wheel.set_m_suspensionStiffness(20);
-        wheel.set_m_rollInfluence(0.2);
-        wheel.set_m_frictionSlip(1e3);
+        wheel.set_m_wheelsDampingCompression(config.dampingCompression);
+        wheel.set_m_wheelsDampingRelaxation(config.dampingRelaxation);
+        // wheel.set_m_maxSuspensionTravelCm(config.suspensionTravelCm);
+        wheel.set_m_suspensionStiffness(config.suspensionStiffness);
+        // wheel.set_m_maxSuspensionForce(config.suspensionForce);
+        wheel.set_m_rollInfluence(config.rollInfluence);
+        wheel.set_m_frictionSlip(config.frictionSlip);
     }
 
     /** @param {import("three").Mesh} mesh @param {object} tuning @param {number} mass @returns {object} vehicle */

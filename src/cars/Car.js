@@ -5,21 +5,22 @@ import { Vector3 } from "three/src/math/Vector3";
 import { Mesh } from "three/src/objects/Mesh";
 import { Color } from "three/src/math/Color";
 import { Box3 } from "three/src/math/Box3";
+import { Emitter } from "../utils/Events";
 import { Loader } from '../utils/Assets';
 import Physics from "../physics";
 
 export default class Car
 {
-    /** @param {number} */ #mass;
+    /** @param {object} */ #config;
     /** @param {object} */ #vehicle;
 
     /** @param {import("three").Group[]} */ #wheels = [];
     /** @param {object} */ #tuning = Physics.vehicleTuning;
 
-    /** @param {number} mass */
-    constructor(mass)
+    /** @param {object} config */
+    constructor(config)
     {
-        this.#mass = mass;
+        this.#config = config;
     }
 
     /** @param {import("three").Group} mesh @param {number | undefined} color @param {boolean | undefined} precise */
@@ -31,10 +32,10 @@ export default class Car
 
         geometry.applyMatrix4(new Matrix4().setPosition(
             size.addVectors(box.min, box.max).multiplyScalar(0.5)
-        )).computeBoundingBox();
+        )).translate(0, this.#config.bboxOffset, 0).computeBoundingBox();
 
         const computeMesh = new Mesh(geometry, DEBUG && new MeshBasicMaterial({ wireframe: true, color }));
-        DEBUG && mesh.attach(computeMesh);
+        DEBUG && Emitter.dispatch("Scene::Add", computeMesh);
         return computeMesh;
     }
 
@@ -47,19 +48,15 @@ export default class Car
     /** @param {import("three").Group} chassis @param {import("three").Group[]} wheels */
     add(chassis, wheels)
     {
-        this.#vehicle = Physics.addVehicle(this.#computeBoundingBox(chassis, Color.NAMES.magenta), this.#tuning, this.#mass);
+        const frame = this.#computeBoundingBox(chassis, Color.NAMES.magenta);
+        frame.geometry.parameters.height += this.#config.groundClearance * 2;
+        this.#vehicle = Physics.addVehicle(frame, this.#tuning, this.#config.mass);
 
         for (let w = 0, l = wheels.length; w < l; w++)
         {
             this.#wheels.push(this.#computeBoundingBox(wheels[w], Color.NAMES.magenta, true));
-
-            Physics.addWheel(
-                this.#vehicle,
-                wheels[w].position,
-                this.#wheels[w].geometry.parameters.height * 0.5,
-                this.#tuning,
-                w < 2
-            );
+            const { position, geometry: { parameters: { height } } } = this.#wheels[w];
+            Physics.addWheel(this.#vehicle, this.#config, position, height * 0.5, this.#tuning, w < 2);
         }
     }
 
@@ -74,7 +71,7 @@ export default class Car
             const rotation = transform.getRotation();
 
             this.#wheels[w].position.set(origin.x(), origin.y(), origin.z());
-            this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+            // this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
         }
     }
 }

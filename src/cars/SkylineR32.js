@@ -1,11 +1,12 @@
 import Car from "./Car";
+import Config from "./config";
 import { Emitter } from "../utils/Events";
 
 export default class SkylineR32 extends Car
 {
     constructor()
     {
-        super(800);
+        super(Config.SkylineR32);
     }
 
     /** @param {import("three").Group[]} models */
