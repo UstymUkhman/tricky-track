@@ -46,7 +46,7 @@ export default class Sandbox extends Level
 
     #setCamera()
     {
-        this.camera.position.set(0, 25, 50);
+        this.camera.position.set(0, 25, -50);
     }
 
     #createStats()
@@ -79,8 +79,8 @@ export default class Sandbox extends Level
         directional.shadow.mapSize.set(1024, 1024);
 
         directional.color.set(Color.NAMES.white);
-        directional.position.set(0, 35, 70);
-        directional.rotation.set(1, 0, 0);
+        directional.position.set(0, 35, -70);
+        directional.rotation.set(-1, 0, 0);
         directional.intensity = 2;
 
         this.scene.add(directional);
@@ -131,6 +131,7 @@ export default class Sandbox extends Level
         this.#stats?.dom.remove();
         this.#controls.dispose();
         RAF.remove(this.#tick);
+        this.#cars.dispose();
         super.dispose();
     }
 }

@@ -14,4 +14,9 @@ export default class Cars
     {
         this.#skylineR32.update();
     }
+
+    dispose()
+    {
+        this.#skylineR32.dispose();
+    }
 }

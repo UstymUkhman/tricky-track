@@ -28,9 +28,9 @@ class Physics
     #linearDamping = RIGID_LINEAR_DAMPING;
     #angularDamping = RIGID_ANGULAR_DAMPING;
 
-    #left = this.#Engine.btVector3(-1, 0, 0);
-    #down = this.#Engine.btVector3(0, -1, 0);
     #transform = new this.#Engine.btTransform();
+    #left = new this.#Engine.btVector3(-1, 0, 0);
+    #down = new this.#Engine.btVector3(0, -1, 0);
 
     /** @type {DynamicBody[]} */ #dynamicBodies = [];
     #broadphase = new this.#Engine.btDbvtBroadphase();
@@ -123,7 +123,7 @@ class Physics
     addWheel(vehicle, config, position, radius, tuning, front)
     {
         const wheel = vehicle.addWheel(
-            this.#Engine.btVector3(...position),
+            new this.#Engine.btVector3(...position),
             this.#down,
             this.#left,
             config.suspensionRestLength,
@@ -141,10 +141,10 @@ class Physics
         wheel.set_m_frictionSlip(config.frictionSlip);
     }
 
-    /** @param {import("three").Mesh} mesh @param {object} tuning @param {number} mass @returns {object} vehicle */
-    addVehicle(mesh, tuning, mass)
+    /** @param {import("three").Mesh} chassis @param {object} tuning @param {number} mass @returns {object} vehicle */
+    addVehicle(chassis, tuning, mass)
     {
-        this.addDynamicBox(mesh, mass);
+        this.addDynamicBox(chassis, mass);
         const { body } = this.#dynamicBodies.at(-1);
 
         const raycaster = new this.#Engine.btDefaultVehicleRaycaster(this.#world);

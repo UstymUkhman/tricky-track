@@ -3,8 +3,6 @@ export default
     SkylineR32:
     {
         mass: 800,
-        bboxOffset: -4.725,
-        groundClearance: 0.425,
         // suspensionForce: void 0,
         // suspensionTravelCm: void 0,
         suspensionRestLength: 0.6,
