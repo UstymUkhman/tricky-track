@@ -1,0 +1,22 @@
+{
+    "SkylineR32":
+    {
+        "suspensionForce": null,
+        "suspensionTravelCm": null,
+        "suspensionRestLength": 0.6,
+        "suspensionStiffness": 20,
+        "dampingCompression": 4.4,
+        "dampingRelaxation": 2.3,
+        "rollInfluence": 0.2,
+        "frictionSlip": 1e3,
+
+        "steerLimit": 0.5,
+        "steerFactor": 0.05,
+        "backBrakeFactor": 1,
+        "frontBrakeFactor": 0.5,
+        "reverseForce": -2100,
+        "engineForce": 2800,
+        "brakeForce": 280,
+        "mass": 1430
+    }
+}

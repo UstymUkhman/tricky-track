@@ -1,42 +1,20 @@
-import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
-import { BoxGeometry } from "three/src/geometries/BoxGeometry";
-import { Matrix4 } from "three/src/math/Matrix4";
-import { Vector3 } from "three/src/math/Vector3";
-import { Mesh } from "three/src/objects/Mesh";
-import { Color } from "three/src/math/Color";
-import { Box3 } from "three/src/math/Box3";
-import { Emitter } from "../utils/Events";
-import { Loader } from '../utils/Assets';
 import Physics from "../physics";
+import { Loader } from '../utils/Assets';
 
 export default class Car
 {
     /** @param {object} */ #config;
     /** @param {object} */ #vehicle;
+    /** @param {number} */ #steering;
 
-    /** @param {import("three").Group[]} */ #wheels = [];
+    /** @param {import("three").Mesh[]} */ #wheels = [];
     /** @param {object} */ #tuning = Physics.vehicleTuning;
 
     /** @param {object} config */
     constructor(config)
     {
+        this.#steering = 0;
         this.#config = config;
-    }
-
-    /** @param {import("three").Group} mesh @param {number | undefined} color @param {boolean | undefined} precise */
-    #computeBoundingBox(mesh, color, precise)
-    {
-        const box = new Box3().setFromObject(mesh, precise);
-        const size = new Vector3().subVectors(box.max, box.min);
-        const geometry = new BoxGeometry(size.x, size.y, size.z);
-
-        geometry.applyMatrix4(new Matrix4().setPosition(
-            size.addVectors(box.min, box.max).multiplyScalar(0.5)
-        )).translate(0, this.#config.bboxOffset, 0).computeBoundingBox();
-
-        const computeMesh = new Mesh(geometry, DEBUG && new MeshBasicMaterial({ wireframe: true, color }));
-        DEBUG && Emitter.dispatch("Scene::Add", computeMesh);
-        return computeMesh;
     }
 
     /** @param {string} chassis @param {string} wheel */
@@ -45,23 +23,59 @@ export default class Car
         return (await Promise.all([Loader.loadGLTF(chassis), Loader.loadGLTF(wheel)])).map(({ scene }) => scene);
     }
 
-    /** @param {import("three").Group} chassis @param {import("three").Group[]} wheels */
+    /** @param {import("three").Mesh} chassis @param {import("three").Mesh[]} wheels */
     add(chassis, wheels)
     {
-        const frame = this.#computeBoundingBox(chassis, Color.NAMES.magenta);
-        frame.geometry.parameters.height += this.#config.groundClearance * 2;
-        this.#vehicle = Physics.addVehicle(frame, this.#tuning, this.#config.mass);
+        this.#vehicle = Physics.addVehicle(chassis, this.#tuning, this.#config.mass);
 
-        for (let w = 0, l = wheels.length; w < l; w++)
+        for (let w = 0, l = wheels.length; w < l; this.#wheels.push(wheels[w++]))
         {
-            this.#wheels.push(this.#computeBoundingBox(wheels[w], Color.NAMES.magenta, true));
-            const { position, geometry: { parameters: { height } } } = this.#wheels[w];
-            Physics.addWheel(this.#vehicle, this.#config, position, height * 0.5, this.#tuning, w < 2);
+            const { position, geometry: { parameters: { height } } } = wheels[w];
+            Physics.addWheel(this.#vehicle, this.#tuning, this.#config, position, height * 0.5, w < 2);
         }
     }
 
-    update()
+    /** @param {boolean} accelerate @param {number} steer @param {boolean} brake */
+    update(accelerate, steer, brake)
     {
+        const speed = this.speed;
+        let acceleration = 0;
+        let braking = 0;
+
+        const {
+            brakeForce,
+            engineForce,
+            reverseForce,
+            steerLimit,
+            steerFactor,
+            frontBrakeFactor,
+            backBrakeFactor
+        } = this.#config;
+
+        console.log(speed.toFixed(2));
+
+        accelerate && (speed < -1 ? braking = brakeForce : acceleration = engineForce );
+        brake      && (speed >  1 ? braking = brakeForce : acceleration = reverseForce);
+
+        steer === -1 ? this.#steering <  steerLimit && (this.#steering += steerFactor) :
+        steer ===  1 ? this.#steering > -steerLimit && (this.#steering -= steerFactor) :
+
+        this.#steering < -steerFactor
+            ? (this.#steering += steerFactor) : this.#steering > steerFactor
+            ? (this.#steering -= steerFactor) : this.#steering = 0;
+
+        this.#vehicle.setBrake(braking * frontBrakeFactor, 0);
+        this.#vehicle.setBrake(braking * frontBrakeFactor, 1);
+
+        this.#vehicle.setBrake(braking * backBrakeFactor, 2);
+        this.#vehicle.setBrake(braking * backBrakeFactor, 3);
+
+        this.#vehicle.setSteeringValue(this.#steering, 0);
+        this.#vehicle.setSteeringValue(this.#steering, 1);
+
+        this.#vehicle.applyEngineForce(acceleration, 2);
+        this.#vehicle.applyEngineForce(acceleration, 3);
+
         for (let w = 0, l = this.#wheels.length; w < l; w++)
         {
             this.#vehicle.updateWheelTransform(w, true);
@@ -71,7 +85,22 @@ export default class Car
             const rotation = transform.getRotation();
 
             this.#wheels[w].position.set(origin.x(), origin.y(), origin.z());
-            // this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+            this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
         }
+    }
+
+    dispose()
+    {
+        this.#vehicle = undefined;
+        this.#config = undefined;
+        this.#tuning = undefined;
+        this.#wheels.length = 0;
+        this.#steering = 0;
+    }
+
+    /** @returns {number} */
+    get speed()
+    {
+        return this.#vehicle.getCurrentSpeedKmHour();
     }
 }

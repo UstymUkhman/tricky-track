@@ -114,13 +114,13 @@ class Physics
 
     /**
      * @param {object} vehicle
+     * @param {object} tuning
      * @param {object} config
      * @param {import("three").Vector3} position
      * @param {number} radius
-     * @param {object} tuning
      * @param {boolean} front
      */
-    addWheel(vehicle, config, position, radius, tuning, front)
+    addWheel(vehicle, tuning, config, position, radius, front)
     {
         const wheel = vehicle.addWheel(
             new this.#Engine.btVector3(...position),

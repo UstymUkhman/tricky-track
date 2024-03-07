@@ -1,9 +1,16 @@
 import Car from "./Car";
-import Config from "./config";
+import Config from "./config.json";
+import Controls from "../controls";
 import { Emitter } from "../utils/Events";
+import { Color } from "three/src/math/Color";
+import { Mesh } from "three/src/objects/Mesh";
+import { BoxGeometry } from "three/src/geometries/BoxGeometry";
+import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
 
 export default class SkylineR32 extends Car
 {
+    #controls = Controls;
+
     constructor()
     {
         super(Config.SkylineR32);
@@ -12,43 +19,72 @@ export default class SkylineR32 extends Car
     /** @param {import("three").Group[]} models */
     #add([chassis, wheel])
     {
-        chassis.position.y = -5.3;
-        chassis.rotation.y = Math.PI;
+        const colliderMaterial = DEBUG && new MeshBasicMaterial({ wireframe: true, color: Color.NAMES.magenta });
+        const chassisCollider = new Mesh(new BoxGeometry(13.569, 8.58, 33.25354), colliderMaterial);
+        const wheelCollider = new Mesh(new BoxGeometry(2.078, 4.773, 4.773), colliderMaterial);
+
+        chassis.position.set(0, -3.84, -1.42);
+        chassisCollider.position.y = 5.14;
         chassis.scale.setScalar(10);
-        Emitter.dispatch("Scene::Add", chassis);
+        chassisCollider.add(chassis);
+        Emitter.dispatch("Scene::Add", chassisCollider);
 
-        const frontRight = wheel.clone();
-        frontRight.rotation.y = Math.PI;
-        frontRight.scale.setScalar(10);
-        frontRight.position.set(-11.9, -5.3, 0);
-        Emitter.dispatch("Scene::Add", frontRight);
+        const wheelMesh = wheel.clone();
+        wheelMesh.scale.setScalar(10);
 
-        const backRight = frontRight.clone();
-        backRight.position.z = 19.2;
-        Emitter.dispatch("Scene::Add", backRight);
+        const frontLeftWheel = wheelMesh.clone();
+        frontLeftWheel.position.set(0.555, 0, 0.05);
+        frontLeftWheel.rotation.set(-0.6, 0, Math.PI);
 
-        const backLeft = wheel.clone();
-        backLeft.rotation.x = -2.5;
-        backLeft.scale.setScalar(10);
-        backLeft.position.set(11.5, 3.85, 22.2);
-        Emitter.dispatch("Scene::Add", backLeft);
+        const frontLeftCollider = wheelCollider.clone();
+        frontLeftCollider.position.set(5.515, -2.3865, 9.52);
+        frontLeftCollider.add(frontLeftWheel);
+        Emitter.dispatch("Scene::Add", frontLeftCollider);
 
-        const frontLeft = backLeft.clone();
-        frontLeft.position.z = 3;
-        Emitter.dispatch("Scene::Add", frontLeft);
+        const frontRightWheel = wheelMesh.clone();
+        frontRightWheel.position.set(-0.555, 0, 0.05);
 
-        super.add(chassis, [frontLeft, frontRight, backLeft, backRight]);
+        const frontRightCollider = wheelCollider.clone();
+        frontRightCollider.position.set(-5.475, -2.3865, 9.52);
+        frontRightCollider.add(frontRightWheel);
+        Emitter.dispatch("Scene::Add", frontRightCollider);
+
+        const backLeftWheel = wheelMesh.clone();
+        backLeftWheel.position.set(0.555, 0, 0.05);
+        backLeftWheel.rotation.set(-0.6, 0, Math.PI);
+
+        const backLeftCollider = wheelCollider.clone();
+        backLeftCollider.position.set(5.515, -2.3865, -9.68);
+        backLeftCollider.add(backLeftWheel);
+        Emitter.dispatch("Scene::Add", backLeftCollider);
+
+        const backRightWheel = wheelMesh.clone();
+        backRightWheel.position.set(-0.555, 0, 0.05);
+
+        const backRightCollider = wheelCollider.clone();
+        backRightCollider.position.set(-5.475, -2.3865, -9.68);
+        backRightCollider.add(backRightWheel);
+        Emitter.dispatch("Scene::Add", backRightCollider);
+
+        super.add(chassisCollider, [frontLeftCollider, frontRightCollider, backLeftCollider, backRightCollider]);
     }
 
     /** @override */
     async load()
     {
-        this.#add(await super.load("chassis.glb", "wheel.glb"));
+        this.#add(await super.load("R32/chassis.glb", "R32/wheel.glb"));
     }
 
     /** @override */
     update()
     {
-        super.update();
+        super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
+    }
+
+    /** @override */
+    dispose()
+    {
+        super.dispose();
+        this.#controls.dispose();
     }
 }
