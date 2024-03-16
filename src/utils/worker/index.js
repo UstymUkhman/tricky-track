@@ -66,6 +66,7 @@ export default class Worker
 
     dispose()
     {
+        this.#worker.terminate();
         this.#events.clear();
     }
 }

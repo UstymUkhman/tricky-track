@@ -2,7 +2,6 @@ import { DirectionalLightHelper } from "three/src/helpers/DirectionalLightHelper
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
-import Stats from "three/examples/jsm/libs/stats.module";
 
 import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
@@ -21,7 +20,6 @@ export default class Sandbox extends Level
     #cars = new Cars(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
     #tick = this.#update.bind(this);
-    /** @type {Stats} */ #stats;
 
     constructor()
     {
@@ -29,8 +27,6 @@ export default class Sandbox extends Level
 
         this.#setScene();
         this.#setCamera();
-        this.#createStats();
-
         this.#createLights();
         this.#createGround();
         this.#createControls();
@@ -47,17 +43,6 @@ export default class Sandbox extends Level
     #setCamera()
     {
         this.camera.position.set(0, 25, -50);
-    }
-
-    #createStats()
-    {
-        if (document.body.lastElementChild?.id !== "stats")
-        {
-            this.#stats = new Stats();
-            this.#stats.showPanel(0);
-            this.#stats.dom.id = "stats";
-            document.body.appendChild(this.#stats.dom);
-        }
     }
 
     #createLights()
@@ -116,19 +101,18 @@ export default class Sandbox extends Level
 
     #update()
     {
-        this.#stats?.begin();
+        this.stats?.begin();
 
         this.#controls.update();
         this.#cars.update();
         super.update();
 
-        this.#stats?.end();
+        this.stats?.end();
     }
 
     /** @override */
     dispose()
     {
-        this.#stats?.dom.remove();
         this.#controls.dispose();
         RAF.remove(this.#tick);
         this.#cars.dispose();

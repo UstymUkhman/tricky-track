@@ -1,6 +1,7 @@
 import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
 import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
 import { AmbientLight } from "three/src/lights/AmbientLight";
+import Stats from "three/examples/jsm/libs/stats.module";
 
 import { Scene } from "three/src/scenes/Scene";
 import { Clock } from "three/src/core/Clock";
@@ -17,6 +18,7 @@ import {
 
 export default class Level
 {
+    /** @type {Stats} */ stats;
     /** @type {WebGLRenderer} */ #renderer;
     /** @type {PerspectiveCamera} */ #camera;
 
@@ -29,10 +31,22 @@ export default class Level
 
     constructor()
     {
+        this.#createStats();
         this.#createCamera();
         this.#createLights();
         this.#createEvents();
         this.#createRenderer();
+    }
+
+    #createStats()
+    {
+        if (document.body.lastElementChild?.id !== "stats")
+        {
+            this.stats = new Stats();
+            this.stats.showPanel(0);
+            this.stats.dom.id = "stats";
+            document.body.appendChild(this.stats.dom);
+        }
     }
 
     #createCamera()
@@ -150,9 +164,16 @@ export default class Level
     {
         this.#disposeNode(this.#scene);
         this.#renderer.dispose();
+        this.stats?.dom.remove();
+
         this.canvas.remove();
         this.#removeEvents();
         this.#scene.clear();
+    }
+
+    get renderer()
+    {
+        return this.#renderer;
     }
 
     get canvas()
