@@ -52,8 +52,6 @@ export default class Car
             backBrakeFactor
         } = this.#config;
 
-        console.log(speed.toFixed(2));
-
         accelerate && (speed < -1 ? braking = brakeForce : acceleration = engineForce );
         brake      && (speed >  1 ? braking = brakeForce : acceleration = reverseForce);
 

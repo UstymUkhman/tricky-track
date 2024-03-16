@@ -134,9 +134,9 @@ class Physics
 
         wheel.set_m_wheelsDampingCompression(config.dampingCompression);
         wheel.set_m_wheelsDampingRelaxation(config.dampingRelaxation);
-        // wheel.set_m_maxSuspensionTravelCm(config.suspensionTravelCm);
+        wheel.set_m_maxSuspensionTravelCm(config.suspensionTravelCm);
         wheel.set_m_suspensionStiffness(config.suspensionStiffness);
-        // wheel.set_m_maxSuspensionForce(config.suspensionForce);
+        wheel.set_m_maxSuspensionForce(config.suspensionForce);
         wheel.set_m_rollInfluence(config.rollInfluence);
         wheel.set_m_frictionSlip(config.frictionSlip);
     }
