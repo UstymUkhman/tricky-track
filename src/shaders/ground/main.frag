@@ -1,6 +1,6 @@
 vec2 position = floor(groundUV * cellSize);
 
-vec3 pattern = vec3(0.8 + 0.2 * mod(
+vec3 pattern = vec3(0.5 + 0.25 * mod(
     floor(position.x) + floor(position.y), 2.0
 ));
 

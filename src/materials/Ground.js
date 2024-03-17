@@ -1,12 +1,12 @@
-import { MeshPhongMaterial } from "three/src/materials/MeshPhongMaterial";
+import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
 import parsVert from "../shaders/ground/pars.vert";
 import mainVert from "../shaders/ground/main.vert";
 import parsFrag from "../shaders/ground/pars.frag";
 import mainFrag from "../shaders/ground/main.frag";
 
-export default class Ground extends MeshPhongMaterial
+export default class extends MeshBasicMaterial
 {
-    /** @param {import("three").MeshPhongMaterialParameters} parameters */
+    /** @param {import("three").MeshBasicMaterialParameters} parameters */
     constructor(parameters)
     {
         super(parameters);

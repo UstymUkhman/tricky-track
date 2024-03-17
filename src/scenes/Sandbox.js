@@ -3,11 +3,11 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
 
+import GroundMaterial from "../materials/Ground";
 import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
-import Ground from "../materials/Ground";
 
 import { PI } from "../utils/Number";
 import Physics from "../physics";
@@ -15,7 +15,7 @@ import RAF from "../utils/RAF";
 import Level from "./Level";
 import Cars from "../cars";
 
-export default class Sandbox extends Level
+export default class extends Level
 {
     #cars = new Cars(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
@@ -76,7 +76,7 @@ export default class Sandbox extends Level
     {
         const ground = new Mesh(
             new PlaneGeometry(500, 500),
-            new Ground({ side: FrontSide, color: Color.NAMES.white })
+            new GroundMaterial({ side: FrontSide, color: Color.NAMES.white })
         );
 
         ground.rotateX(-PI.d2);
