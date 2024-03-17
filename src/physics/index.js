@@ -112,6 +112,16 @@ class Physics
         ), mass);
     }
 
+    /** @param {import("three").Mesh} mesh */
+    addStaticBox(mesh)
+    {
+        const { width, height, depth } = mesh.geometry.parameters;
+
+        this.#addStaticBody(mesh, new this.#Engine.btBoxShape(
+            new this.#Engine.btVector3(width * 0.5, height * 0.5, depth * 0.5)
+        ));
+    }
+
     /**
      * @param {object} vehicle
      * @param {object} tuning

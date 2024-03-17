@@ -5,20 +5,23 @@ import { Sky } from "three/examples/jsm/objects/Sky.js";
 import { MathUtils } from "three/src/math/MathUtils";
 import { RepeatWrapping } from "three/src/constants";
 import { Vector3 } from "three/src/math/Vector3";
-import { Scene } from "three/src/scenes/Scene";
 import { Color } from "three/src/math/Color";
 import { Loader } from '../utils/Assets';
+import Mouse from "../controls/Mouse";
 import { PI } from "../utils/Number";
 import RAF from "../utils/RAF";
+import Track from "../track";
 import Level from "./Level";
 
-export default class Track extends Level
+export default class extends Level
 {
     /** @type {import("three").Uniform} */ #waterTime;
     /** @type {PMREMGenerator} */ #pmrem;
-    #tick = this.#update.bind(this);
+    /** @type {number} */ #size = 1e4;
 
-    #size = 1e4;
+    #tick = this.#update.bind(this);
+    /** @type {Mouse} */ #mouse;
+    /** @type {Track} */ #track;
 
     constructor()
     {
@@ -27,6 +30,10 @@ export default class Track extends Level
         this.#pmrem = new PMREMGenerator(this.renderer);
         this.#createWater(this.#createSky());
 
+        this.#track = new Track(
+            this.scene.environment
+        );
+
         RAF.add(this.#tick);
         this.#setCamera();
     }
@@ -34,8 +41,6 @@ export default class Track extends Level
     #createSky()
     {
         const sky = new Sky();
-        const scene = new Scene();
-
         sky.scale.setScalar(this.#size);
         const { uniforms } = sky.material;
 
@@ -45,15 +50,15 @@ export default class Track extends Level
         uniforms.mieCoefficient.value = 0.005;
 
         const sun = new Vector3().setFromSphericalCoords(
-            1, MathUtils.degToRad(90 - 2), MathUtils.degToRad(180)
+            1, MathUtils.degToRad(90 - 2), MathUtils.degToRad(0)
         );
 
-        this.scene.environment = this.#pmrem.fromScene(
-            scene.add(sky), 0, this.camera.near, this.camera.far
+        uniforms.sunPosition.value.copy(sun);
+
+        this.scene.add(sky).environment = this.#pmrem.fromScene(
+            this.scene, 0, this.camera.near, this.camera.far
         ).texture;
 
-        uniforms.sunPosition.value.copy(sun);
-        this.scene.add(sky);
         return sun;
     }
 
@@ -82,13 +87,16 @@ export default class Track extends Level
         this.#waterTime = water.material.uniforms.time;
 
         water.rotation.x = -PI.d2;
+        water.position.y = -1.0;
+
         this.scene.add(water);
         RAF.pause = false;
     }
 
     #setCamera()
     {
-        this.camera.position.set(0, 5, -25);
+        this.camera.rotation.y = Math.PI;
+        this.#mouse = new Mouse(this.camera);
     }
 
     /** @param {number} delta */
@@ -108,6 +116,8 @@ export default class Track extends Level
     {
         RAF.remove(this.#tick);
         this.#pmrem.dispose();
+        this.#mouse.dispose();
+        this.#track.dispose();
         super.dispose();
     }
 }
