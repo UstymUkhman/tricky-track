@@ -7,6 +7,7 @@ export default class Car
     /** @param {object} */ #vehicle;
     /** @param {number} */ #steering;
 
+    /** @param {import("three").Mesh} */ #chassis;
     /** @param {import("three").Mesh[]} */ #wheels = [];
     /** @param {object} */ #tuning = Physics.vehicleTuning;
 
@@ -26,7 +27,7 @@ export default class Car
     /** @param {import("three").Mesh} chassis @param {import("three").Mesh[]} wheels */
     add(chassis, wheels)
     {
-        this.#vehicle = Physics.addVehicle(chassis, this.#tuning, this.#config.mass);
+        this.#vehicle = Physics.addVehicle(this.#chassis = chassis, this.#tuning, this.#config.mass);
 
         for (let w = 0, l = wheels.length; w < l; this.#wheels.push(wheels[w++]))
         {
@@ -85,6 +86,24 @@ export default class Car
             this.#wheels[w].position.set(origin.x(), origin.y(), origin.z());
             this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
         }
+    }
+
+    /** @param {number} y */
+    reset(y)
+    {
+        this.#vehicle.applyEngineForce(0, 2);
+        this.#vehicle.applyEngineForce(0, 3);
+
+        this.#vehicle.setBrake(Infinity, 0);
+        this.#vehicle.setBrake(Infinity, 1);
+
+        this.#vehicle.setBrake(Infinity, 2);
+        this.#vehicle.setBrake(Infinity, 3);
+
+        this.#chassis.position.set(0, y, 0);
+        this.#chassis.rotation.set(0, 0, 0);
+
+        Physics.teleportDynamicBody(this.#chassis);
     }
 
     dispose()

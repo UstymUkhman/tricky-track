@@ -84,6 +84,7 @@ export default class SkylineR32 extends Car
     update()
     {
         super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
+        if (this.#position.y < 0) super.reset(5.14);
         return this.#position;
     }
 

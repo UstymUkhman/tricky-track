@@ -9,6 +9,7 @@ import { Vector3 } from "three/src/math/Vector3";
 import { PI } from "../utils/Number";
 
 import {
+    ACTIVE_TAG,
     RIGID_MARGIN,
     RIGID_FRICTION,
     RIGID_RESTITUTION,
@@ -23,6 +24,7 @@ import {
 class Physics
 {
     #Engine = Ammo;
+    #paused = false;
 
     #friction = RIGID_FRICTION;
     #restitution = RIGID_RESTITUTION;
@@ -147,6 +149,18 @@ class Physics
     }
 
     /** @param {import("three").Mesh} mesh */
+    teleportDynamicBody(mesh)
+    {
+        const index = this.#dynamicBodies.findIndex(({ mesh: { uuid } }) => mesh.uuid === uuid);
+        if (index === -1) return;
+        const { position, quaternion } = mesh;
+
+        this.#transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+        this.#transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+        this.#dynamicBodies[index].body.setWorldTransform(this.#transform);
+    }
+
+    /** @param {import("three").Mesh} mesh */
     removeDynamicBody(mesh)
     {
         const index = this.#dynamicBodies.findIndex(({ mesh: { uuid } }) => mesh.uuid === uuid);
@@ -207,6 +221,8 @@ class Physics
     /** @param {number} delta */
     update(delta)
     {
+        // if (this.#paused) return;
+
         for (let b = this.#dynamicBodies.length; b--; )
         {
             const { body, mesh } = this.#dynamicBodies[b];
@@ -232,6 +248,14 @@ class Physics
     get vehicleTuning()
     {
         return new this.#Engine.btVehicleTuning();
+    }
+
+    /** @param {boolean} pause */
+    set pause (pause)
+    {
+        this.#paused = pause;
+        const state = pause ? DISABLE_SIMULATION : ACTIVE_TAG;
+        this.#dynamicBodies.forEach(({ body }) => body.forceActivationState(state));
     }
 
     dispose()
