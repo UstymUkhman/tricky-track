@@ -8,16 +8,24 @@ import Physics from "../physics";
 
 export default class Base
 {
+    /** @type {Mesh} */ #mesh;
+
     /** @param {number} width @param {number} height @param {number} depth */
     constructor(width, height, depth)
     {
-        const base = new Mesh(
+        this.#mesh = new Mesh(
             new BoxGeometry(width, height, depth),
             new MeshStandardMaterial({ side: FrontSide, color: Color.NAMES.darkgray })
         );
 
-        Emitter.dispatch("Scene::Add", base);
-        base.position.y = height * -0.5;
-        Physics.addStaticBox(base);
+        Emitter.dispatch("Scene::Add", this.#mesh);
+        this.#mesh.position.y = height * -0.5;
+        Physics.addStaticBox(this.#mesh);
+    }
+
+    dispose()
+    {
+        Physics.removeStaticBody(this.#mesh);
+        Emitter.dispatch("Scene::Remove", this.#mesh);
     }
 }

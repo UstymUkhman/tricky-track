@@ -17,7 +17,6 @@ export default class extends Level
 {
     /** @type {import("three").Uniform} */ #waterTime;
     /** @type {PMREMGenerator} */ #pmrem;
-    /** @type {number} */ #size = 1e4;
 
     #tick = this.#update.bind(this);
     /** @type {Mouse} */ #mouse;
@@ -41,7 +40,7 @@ export default class extends Level
     #createSky()
     {
         const sky = new Sky();
-        sky.scale.setScalar(this.#size);
+        sky.scale.setScalar(1e4);
         const { uniforms } = sky.material;
 
         uniforms.rayleigh.value = 3;
@@ -69,7 +68,7 @@ export default class extends Level
         normals.wrapS = normals.wrapT = RepeatWrapping;
         const { white, lightseagreen } = Color.NAMES;
 
-        const water = new Water(new PlaneGeometry(this.#size, this.#size),
+        const water = new Water(new PlaneGeometry(500, 500),
         {
             sunDirection: new Vector3(),
             waterColor: lightseagreen,
@@ -87,7 +86,7 @@ export default class extends Level
         this.#waterTime = water.material.uniforms.time;
 
         water.rotation.x = -PI.d2;
-        water.position.y = -1.0;
+        water.position.y = -0.5;
 
         this.scene.add(water);
         RAF.pause = false;
