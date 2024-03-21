@@ -17,6 +17,7 @@
         "reverseForce": -2100,
         "engineForce": 2800,
         "brakeForce": 280,
-        "mass": 1430
+        "mass": 1430,
+        "scale": 10
     }
 }
