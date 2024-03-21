@@ -13,9 +13,11 @@ export default class SkylineR32 extends Car
     #controls = Controls;
     #position = new Vector3();
 
-    constructor()
+    /** @param {(chassis: import("three").Mesh) => void} onLoad */
+    constructor(onLoad)
     {
         super(Config.SkylineR32);
+        this.#load().then(onLoad);
     }
 
     /** @param {import("three").Group[]} models */
@@ -73,7 +75,7 @@ export default class SkylineR32 extends Car
     }
 
     /** @override */
-    async load()
+    async #load()
     {
         const models = await super.load("R32/chassis.glb", "R32/wheel.glb");
         this.#add(models);

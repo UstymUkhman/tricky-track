@@ -67,6 +67,12 @@ export default class Mouse
         window.removeEventListener("mousemove", this.#mousemove, false);
     }
 
+    /** @param {import("three").Vector3} position */
+    update(position)
+    {
+        this.#yaw.position.copy(position);
+    }
+
     dispose()
     {
         this.#removeEvents();

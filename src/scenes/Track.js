@@ -6,17 +6,18 @@ import { MathUtils } from "three/src/math/MathUtils";
 import { RepeatWrapping } from "three/src/constants";
 import { Vector3 } from "three/src/math/Vector3";
 import { Color } from "three/src/math/Color";
+
 import { Loader } from '../utils/Assets';
 import Mouse from "../controls/Mouse";
 import { PI } from "../utils/Number";
+import Car from "../cars/SkylineR32";
 import RAF from "../utils/RAF";
 import Track from "../track";
 import Level from "./Level";
-import Cars from "../cars";
 
 export default class extends Level
 {
-    #cars = new Cars(this.#setCamera.bind(this));
+    #car = new Car(this.#setCamera.bind(this));
     /** @type {PMREMGenerator} */ #pmrem;
     #tick = this.#update.bind(this);
 
@@ -109,10 +110,12 @@ export default class extends Level
 
         this.#water.material.uniforms.time.value += delta * 0.001;
 
-        const { x, z } = this.#cars.update();
+        const position = this.#car.update();
 
-        this.#water.position.x = x;
-        this.#water.position.z = z;
+        this.#water.position.x = position.x;
+        this.#water.position.z = position.z;
+
+        this.#mouse.update(position);
 
         super.update();
 
@@ -126,7 +129,7 @@ export default class extends Level
         this.#pmrem.dispose();
         this.#track.dispose();
         this.#mouse.dispose();
-        this.#cars.dispose();
+        this.#car.dispose();
         super.dispose();
     }
 }

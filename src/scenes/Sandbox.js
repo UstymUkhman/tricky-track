@@ -10,14 +10,14 @@ import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
 
 import { PI } from "../utils/Number";
+import Car from "../cars/SkylineR32";
 import Physics from "../physics";
 import RAF from "../utils/RAF";
 import Level from "./Level";
-import Cars from "../cars";
 
 export default class extends Level
 {
-    #cars = new Cars(() => RAF.pause = false);
+    #car = new Car(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
     #tick = this.#update.bind(this);
 
@@ -104,7 +104,7 @@ export default class extends Level
         this.stats?.begin();
 
         this.#controls.update();
-        this.#cars.update();
+        this.#car.update();
         super.update();
 
         this.stats?.end();
@@ -115,7 +115,7 @@ export default class extends Level
     {
         this.#controls.dispose();
         RAF.remove(this.#tick);
-        this.#cars.dispose();
+        this.#car.dispose();
         super.dispose();
     }
 }
