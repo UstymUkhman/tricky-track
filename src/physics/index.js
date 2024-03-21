@@ -207,15 +207,21 @@ class Physics
     /** @param {number} delta */
     update(delta)
     {
-        for (let b = 0, l = this.#dynamicBodies.length; b < l; b++)
+        for (let b = this.#dynamicBodies.length; b--; )
         {
             const { body, mesh } = this.#dynamicBodies[b];
             body.getMotionState().getWorldTransform(this.#transform);
 
             const origin = this.#transform.getOrigin();
             const rotation = this.#transform.getRotation();
+            const x = origin.x(), y = origin.y(), z = origin.z();
 
-            mesh.position.set(origin.x(), origin.y(), origin.z());
+            mesh.userData.x = x;
+            mesh.userData.y = y;
+            mesh.userData.z = z;
+
+            mesh.position.set(x, y, z);
+            mesh.userData.position?.set(x, y, z);
             mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
         }
 

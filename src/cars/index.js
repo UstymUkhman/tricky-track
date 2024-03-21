@@ -4,15 +4,15 @@ export default class Cars
 {
     #skylineR32 = new SkylineR32();
 
-    /** @param {() => void} onLoad */
+    /** @param {(chassis: import("three").Mesh) => void} onLoad */
     constructor(onLoad)
     {
-        Promise.all([this.#skylineR32.load()]).then(onLoad);
+        this.#skylineR32.load().then(onLoad);
     }
 
     update()
     {
-        this.#skylineR32.update();
+        return this.#skylineR32.update();
     }
 
     dispose()

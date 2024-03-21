@@ -12,15 +12,17 @@ import { PI } from "../utils/Number";
 import RAF from "../utils/RAF";
 import Track from "../track";
 import Level from "./Level";
+import Cars from "../cars";
 
 export default class extends Level
 {
-    /** @type {import("three").Uniform} */ #waterTime;
+    #cars = new Cars(this.#setCamera.bind(this));
     /** @type {PMREMGenerator} */ #pmrem;
-
     #tick = this.#update.bind(this);
-    /** @type {Mouse} */ #mouse;
+
+    /** @type {Water} */ #water;
     /** @type {Track} */ #track;
+    /** @type {Mouse} */ #mouse;
 
     constructor()
     {
@@ -34,7 +36,18 @@ export default class extends Level
         );
 
         RAF.add(this.#tick);
-        this.#setCamera();
+    }
+
+    /** @param {import("three").Mesh} chassis */
+    #setCamera(chassis)
+    {
+        chassis.add(this.camera);
+        this.#mouse = new Mouse(this.camera);
+
+        this.camera.position.set(0, 10, -35);
+        this.camera.rotation.set(0.25, Math.PI, 0);
+
+        RAF.pause = false;
     }
 
     #createSky()
@@ -68,7 +81,7 @@ export default class extends Level
         normals.wrapS = normals.wrapT = RepeatWrapping;
         const { white, lightseagreen } = Color.NAMES;
 
-        const water = new Water(new PlaneGeometry(500, 500),
+        this.#water = new Water(new PlaneGeometry(1e3, 1e3),
         {
             sunDirection: new Vector3(),
             waterColor: lightseagreen,
@@ -82,20 +95,11 @@ export default class extends Level
             sunColor: white
         });
 
-        water.material.uniforms.sunDirection.value.copy(sun).normalize();
-        this.#waterTime = water.material.uniforms.time;
+        this.#water.material.uniforms.sunDirection.value.copy(sun).normalize();
 
-        water.rotation.x = -PI.d2;
-        water.position.y = -0.5;
-
-        this.scene.add(water);
-        RAF.pause = false;
-    }
-
-    #setCamera()
-    {
-        this.camera.rotation.y = Math.PI;
-        this.#mouse = new Mouse(this.camera);
+        this.#water.rotation.x = -PI.d2;
+        this.#water.position.y = -0.5;
+        this.scene.add(this.#water);
     }
 
     /** @param {number} delta */
@@ -103,7 +107,12 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        this.#waterTime.value += delta * 0.001;
+        this.#water.material.uniforms.time.value += delta * 0.001;
+
+        const { x, z } = this.#cars.update();
+
+        this.#water.position.x = x;
+        this.#water.position.z = z;
 
         super.update();
 
@@ -115,8 +124,9 @@ export default class extends Level
     {
         RAF.remove(this.#tick);
         this.#pmrem.dispose();
-        this.#mouse.dispose();
         this.#track.dispose();
+        this.#mouse.dispose();
+        this.#cars.dispose();
         super.dispose();
     }
 }

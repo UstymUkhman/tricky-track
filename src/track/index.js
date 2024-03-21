@@ -4,7 +4,7 @@ export default class Track
 {
     constructor()
     {
-        new Base(10, 1, 25);
+        new Base(25, 1, 50);
     }
 
     dispose() {}
