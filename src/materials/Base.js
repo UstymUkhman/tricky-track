@@ -1,20 +1,11 @@
 import { MeshStandardMaterial } from "three/src/materials/MeshStandardMaterial";
-import { RepeatWrapping, FrontSide } from "three/src/constants";
-import { Loader } from '../utils/Assets';
 
 export default class extends MeshStandardMaterial
 {
-    /** @param {import("three").MeshStandardMaterialParameters} parameters @param {import("three").Vector2 | undefined} repeat */
-    constructor(parameters, repeat)
+    /** @param {import("three").MeshStandardMaterialParameters} parameters */
+    constructor(parameters)
     {
         super(parameters);
-
-        Loader.loadTexture("asphalt.jpg").then((asphalt) =>
-        {
-            repeat && asphalt.repeat.copy(repeat);
-            asphalt.wrapS = asphalt.wrapT = RepeatWrapping;
-            this.setValues({ ...parameters, map: asphalt, side: FrontSide });
-        });
     }
 
     dispose()

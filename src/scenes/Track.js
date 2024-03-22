@@ -35,14 +35,12 @@ export default class extends Level
     {
         super();
 
+        this.scene.background = new Color(Color.NAMES.skyblue);
         this.#pmrem = new PMREMGenerator(this.renderer);
+
         const sun = this.#createSky();
         this.#createLights(sun);
         this.#createWater(sun);
-
-        this.#track = new Track(
-            this.scene.environment
-        );
 
         RAF.add(this.#tick);
     }
@@ -56,7 +54,10 @@ export default class extends Level
         this.camera.position.set(0, 10, -35);
         this.camera.rotation.set(0.25, Math.PI, 0);
 
-        RAF.pause = false;
+        this.#track = new Track(this.#car.bbox, () =>
+        {
+            RAF.pause = false;
+        });
     }
 
     #createSky()
@@ -137,19 +138,21 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        const position = this.#car.update();
-        this.#sky.position.set(position.x, 0, position.z);
-
+        const position = this.#car.update(this.#track.firstTile);
         const { x, z } = this.#directionalLight.userData.position;
+
         this.#water.material.uniforms.time.value += delta * 0.001;
 
         this.#directionalLight.position.x = position.x + x;
         this.#directionalLight.position.z = position.z + z;
 
+        this.#sky.position.set(position.x, 0, position.z);
+
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
 
         this.#mouse.update(position);
+        this.#track.update(position);
 
         super.update();
 
