@@ -1,8 +1,7 @@
-import { MeshStandardMaterial } from "three/src/materials/MeshStandardMaterial";
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
-import { FrontSide } from "three/src/constants";
+import { Vector2 } from "three/src/math/Vector2";
 import { Mesh } from "three/src/objects/Mesh";
-import { Color } from "three/src/math/Color";
+import BaseMaterial from "../materials/Base";
 import { Emitter } from "../utils/Events";
 import Physics from "../physics";
 
@@ -15,12 +14,13 @@ export default class Base
     {
         this.#mesh = new Mesh(
             new BoxGeometry(width, height, depth),
-            new MeshStandardMaterial({ side: FrontSide, color: Color.NAMES.darkgray })
+            new BaseMaterial(undefined, new Vector2(1, 2))
         );
 
         Emitter.dispatch("Scene::Add", this.#mesh);
         this.#mesh.position.y = height * -0.5;
         Physics.addStaticBox(this.#mesh);
+        this.#mesh.receiveShadow = true;
     }
 
     dispose()
