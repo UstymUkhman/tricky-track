@@ -1,4 +1,16 @@
 {
+    "Default":
+    {
+        "suspensionForce": 6e3,
+        "suspensionTravelCm": 500,
+        "suspensionRestLength": 0.5,
+        "suspensionStiffness": 5.88,
+        "dampingCompression": 0.83,
+        "dampingRelaxation": 0.88,
+        "rollInfluence": 0.1,
+        "frictionSlip": 10.5
+    },
+
     "SkylineR32":
     {
         "suspensionForce": 6e3,

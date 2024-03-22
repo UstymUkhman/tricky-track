@@ -28,12 +28,14 @@ export default class SkylineR32 extends Car
         const wheelCollider = new Mesh(new BoxGeometry(2.078, 4.773, 4.773), colliderMaterial);
 
         chassisCollider.userData = { position: this.#position };
+        chassis.traverse(child => child.castShadow = true);
         chassis.position.set(0, -3.84, -1.42);
         chassisCollider.position.y = 5.14;
         chassis.scale.setScalar(10);
         chassisCollider.add(chassis);
         Emitter.dispatch("Scene::Add", chassisCollider);
 
+        wheel.traverse(child => child.castShadow = true);
         const wheelMesh = wheel.clone();
         wheelMesh.scale.setScalar(10);
 
