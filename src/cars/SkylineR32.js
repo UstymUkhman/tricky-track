@@ -25,6 +25,7 @@ export default class SkylineR32 extends Car
     {
         const colliderMaterial = DEBUG && new MeshBasicMaterial({ wireframe: true, color: Color.NAMES.magenta });
         const chassisCollider = new Mesh(new BoxGeometry(13.569, 8.58, 33.25354), colliderMaterial);
+        const collider = new Mesh(new BoxGeometry(13.569, 9.15 + 0.5, 33.25354), colliderMaterial);
         const wheelCollider = new Mesh(new BoxGeometry(2.078, 4.773, 4.773), colliderMaterial);
 
         chassisCollider.userData = { position: this.#position };
@@ -73,7 +74,15 @@ export default class SkylineR32 extends Car
         backRightCollider.add(backRightWheel);
         Emitter.dispatch("Scene::Add", backRightCollider);
 
-        super.add(chassisCollider, [frontLeftCollider, frontRightCollider, backLeftCollider, backRightCollider]);
+        super.add(chassisCollider, [
+            frontLeftCollider,
+            frontRightCollider,
+            backLeftCollider,
+            backRightCollider
+        ]);
+
+        collider.position.y -= 0.285 + 0.25;
+        super.createBoundingBox(collider);
     }
 
     /** @override */
@@ -84,11 +93,18 @@ export default class SkylineR32 extends Car
         return models[0];
     }
 
-    /** @override */
-    update()
+    /** @override @param {Vector3} tile */
+    update(tile)
     {
         super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
-        if (this.#position.y < 0) super.reset(5.14);
+
+        // TODO: `super.reset` when `this.bbox` intersects `Water.PlaneGeometry`:
+        if (this.#position.y < 0)
+        {
+            tile.y = 5.14;
+            super.reset(tile);
+        }
+
         return this.#position;
     }
 

@@ -1,15 +1,20 @@
-import Physics from "../physics";
+import { Box3 } from "three/src/math/Box3";
 import { Loader } from '../utils/Assets';
+import Physics from "../physics";
 
 export default class Car
 {
-    /** @param {object} */ #config;
-    /** @param {object} */ #vehicle;
-    /** @param {number} */ #steering;
+    #bbox = new Box3();
 
-    /** @param {import("three").Mesh} */ #chassis;
-    /** @param {import("three").Mesh[]} */ #wheels = [];
-    /** @param {object} */ #tuning = Physics.vehicleTuning;
+    /** @type {object} */ #config;
+    /** @type {object} */ #vehicle;
+    /** @type {number} */ #steering;
+
+    /** @type {import("three").Mesh} */ #chassis;
+    /** @type {import("three").Mesh} */ #collider;
+
+    /** @type {import("three").Mesh[]} */ #wheels = [];
+    /** @type {object} */ #tuning = Physics.vehicleTuning;
 
     /** @param {object} config */
     constructor(config)
@@ -34,6 +39,14 @@ export default class Car
             const { position, geometry: { parameters: { height } } } = wheels[w];
             Physics.addWheel(this.#vehicle, this.#tuning, this.#config, position, height * 0.5, w < 2);
         }
+    }
+
+    /** @param {import("three").Mesh} collider */
+    createBoundingBox(collider)
+    {
+        this.#collider = collider;
+        this.#chassis.add(this.#collider);
+        this.#bbox.setFromObject(this.#collider);
     }
 
     /** @param {boolean} accelerate @param {number} steer @param {boolean} brake */
@@ -75,6 +88,9 @@ export default class Car
         this.#vehicle.applyEngineForce(acceleration, 2);
         this.#vehicle.applyEngineForce(acceleration, 3);
 
+        this.#bbox.copy(this.#collider.geometry.boundingBox)
+            .applyMatrix4(this.#collider.matrixWorld);
+
         for (let w = 0, l = this.#wheels.length; w < l; w++)
         {
             this.#vehicle.updateWheelTransform(w, true);
@@ -88,8 +104,8 @@ export default class Car
         }
     }
 
-    /** @param {number} y */
-    reset(y)
+    /** @param {Vector3} target */
+    reset(target)
     {
         this.#vehicle.applyEngineForce(0, 2);
         this.#vehicle.applyEngineForce(0, 3);
@@ -100,10 +116,13 @@ export default class Car
         this.#vehicle.setBrake(Infinity, 2);
         this.#vehicle.setBrake(Infinity, 3);
 
-        this.#chassis.position.set(0, y, 0);
+        this.#chassis.position.copy(target);
         this.#chassis.rotation.set(0, 0, 0);
 
         Physics.teleportDynamicBody(this.#chassis);
+
+        this.#bbox.copy(this.#collider.geometry.boundingBox)
+            .applyMatrix4(this.#collider.matrixWorld);
     }
 
     dispose()
@@ -119,5 +138,11 @@ export default class Car
     get speed()
     {
         return this.#vehicle.getCurrentSpeedKmHour();
+    }
+
+    /** @returns {Box3} */
+    get bbox()
+    {
+        return this.#bbox;
     }
 }
