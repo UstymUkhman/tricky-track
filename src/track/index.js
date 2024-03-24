@@ -5,17 +5,24 @@ import Base from "./Base";
 
 export default class Track
 {
-    #halfDepth = 25;
+    #ready = false; #nextTile = 2;
+    #size = new Vector3(25, 1, 50);
+
     /** @type {Base[]} */ #tiles = [];
     /** @type {import("three").Texture} */ #asphalt;
-    #size = new Vector3(25, 1, this.#halfDepth * 2);
 
     /** @param {() => void} onLoad */
     constructor(onLoad)
     {
         this.#createAsphalt().then(() =>
         {
-            this.#initialize();
+            this.#tiles.push(
+                new Base(this.#size, new Vector3(0, -0.5,   0), this.#asphalt.clone(), false),
+                new Base(this.#size, new Vector3(0, -0.5,  50), this.#asphalt.clone(), false),
+                new Base(this.#size, new Vector3(0, -0.5, 100), this.#asphalt.clone())
+            );
+
+            setTimeout(() => this.#ready = true, 3e3);
             onLoad();
         });
     }
@@ -26,15 +33,22 @@ export default class Track
         this.#asphalt.wrapS = this.#asphalt.wrapT = RepeatWrapping;
     }
 
-    #initialize()
+    /** @param {number} delta */
+    update(delta)
     {
-        this.#tiles.push(
-            new Base(this.#size, new Vector3(0, -0.5,   0), this.#asphalt.clone()),
-            new Base(this.#size, new Vector3(0, -0.5,  50), this.#asphalt.clone()),
-            new Base(this.#size, new Vector3(0, -0.5, 100), this.#asphalt.clone()),
-            new Base(this.#size, new Vector3(0, -0.5, 150), this.#asphalt.clone()),
-            new Base(this.#size, new Vector3(0, -0.5, 200), this.#asphalt.clone())
-        );
+        if (!this.#ready) return;
+
+        if (this.#tiles[0].update(delta))
+        {
+            this.#tiles.splice(0, 1);
+            this.#nextTile--;
+        }
+
+        if (this.#tiles[this.#nextTile].update(delta))
+        {
+            const z = ++this.#nextTile * 50;
+            this.#tiles.push(new Base(this.#size, new Vector3(0, -0.5, z), this.#asphalt.clone()));
+        }
     }
 
     get tile()
@@ -44,6 +58,7 @@ export default class Track
 
     dispose()
     {
+        this.#tiles.forEach(tile.dispose.bind(tile));
         this.#asphalt.dispose();
         this.#tiles.splice(0);
     }

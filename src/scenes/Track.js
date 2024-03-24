@@ -160,6 +160,7 @@ export default class extends Level
         this.#water.position.z = position.z;
 
         this.#mouse.update(position);
+        this.#track.update(delta);
 
         super.update();
 
