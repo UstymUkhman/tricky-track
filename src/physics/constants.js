@@ -44,7 +44,7 @@ export const RIGID_ANGULAR_FACTOR  = 1;
 // Collision constants:
 // export const CCD_MOTION_THRESHOLD = 1e-5;
 // export const STATIC_COLLISION     =    1;
-// export const KINEMATIC_COLLISION  =    2;
+export const KINEMATIC_COLLISION  =    2;
 // export const IGNORED_COLLISION    =    4;
 // export const SOFT_COLLISION       = 0x11;
 

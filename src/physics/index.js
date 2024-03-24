@@ -9,11 +9,11 @@ import { Vector3 } from "three/src/math/Vector3";
 import { PI } from "../utils/Number";
 
 import {
-    ACTIVE_TAG,
     RIGID_MARGIN,
     RIGID_FRICTION,
     RIGID_RESTITUTION,
     DISABLE_SIMULATION,
+    KINEMATIC_COLLISION,
     RIGID_LINEAR_FACTOR,
     RIGID_ANGULAR_FACTOR,
     DISABLE_DEACTIVATION,
@@ -24,7 +24,6 @@ import {
 class Physics
 {
     #Engine = Ammo;
-    #paused = false;
 
     #friction = RIGID_FRICTION;
     #restitution = RIGID_RESTITUTION;
@@ -39,6 +38,8 @@ class Physics
     #broadphase = new this.#Engine.btDbvtBroadphase();
 
     /** @type {Map<string, object>} */ #staticBodies = new Map();
+    /** @type {Map<string, object>} */ #kinematicBodies = new Map();
+
     #collision = new this.#Engine.btDefaultCollisionConfiguration();
     #solver = new this.#Engine.btSequentialImpulseConstraintSolver();
     #dispatcher = new this.#Engine.btCollisionDispatcher(this.#collision);
@@ -128,6 +129,48 @@ class Physics
         this.#Engine.destroy(body);
         this.#world.removeRigidBody(body);
         this.#staticBodies.delete(mesh.uuid);
+    }
+
+    /** @param {import("three").Mesh} mesh @param {object} shape */
+    #addKinematicBody(mesh, shape)
+    {
+        const body = this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone());
+        body.setCollisionFlags(body.getCollisionFlags() | KINEMATIC_COLLISION);
+        this.#kinematicBodies.set(mesh.uuid, body);
+        this.#world.addRigidBody(body);
+    }
+
+    /** @param {import("three").Mesh} mesh */
+    addKinematicBox(mesh)
+    {
+        const { width, height, depth } = mesh.geometry.parameters;
+
+        this.#addKinematicBody(mesh, new this.#Engine.btBoxShape(
+            new this.#Engine.btVector3(width * 0.5, height * 0.5, depth * 0.5)
+        ));
+    }
+
+    /** @param {import("three").Mesh} mesh */
+    moveKinematicBody(mesh)
+    {
+        const body = this.#kinematicBodies.get(mesh.uuid);
+        if (!body) return;
+
+        const motionState = body.getMotionState();
+        this.#transform.getOrigin().setValue(...mesh.position);
+        motionState && motionState.setWorldTransform(this.#transform);
+    }
+
+    /** @param {import("three").Mesh} mesh */
+    removeKinematicBody(mesh)
+    {
+        const body = this.#kinematicBodies.get(mesh.uuid);
+        if (!body) return;
+        body.forceActivationState(DISABLE_SIMULATION);
+
+        this.#Engine.destroy(body);
+        this.#world.removeRigidBody(body);
+        this.#kinematicBodies.delete(mesh.uuid);
     }
 
     /** @param {import("three").Mesh} mesh @param {object} shape @param {number} mass */
@@ -221,8 +264,6 @@ class Physics
     /** @param {number} delta */
     update(delta)
     {
-        // if (this.#paused) return;
-
         for (let b = this.#dynamicBodies.length; b--; )
         {
             const { body, mesh } = this.#dynamicBodies[b];
@@ -250,16 +291,9 @@ class Physics
         return new this.#Engine.btVehicleTuning();
     }
 
-    /** @param {boolean} pause */
-    set pause (pause)
-    {
-        this.#paused = pause;
-        const state = pause ? DISABLE_SIMULATION : ACTIVE_TAG;
-        this.#dynamicBodies.forEach(({ body }) => body.forceActivationState(state));
-    }
-
     dispose()
     {
+        this.#kinematicBodies.clear();
         this.#dynamicBodies.splice(0);
         this.#staticBodies.clear();
         this.#world.__destroy__();
