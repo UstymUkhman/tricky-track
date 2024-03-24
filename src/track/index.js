@@ -7,17 +7,15 @@ export default class Track
 {
     #halfDepth = 25;
     /** @type {Base[]} */ #tiles = [];
-    /** @type {import("three").Box3} */ #bbox;
     /** @type {import("three").Texture} */ #asphalt;
     #size = new Vector3(25, 1, this.#halfDepth * 2);
 
-    /** @param {import("three").Box3} bbox @param {() => void} onLoad */
-    constructor(bbox, onLoad)
+    /** @param {() => void} onLoad */
+    constructor(onLoad)
     {
         this.#createAsphalt().then(() =>
         {
             this.#initialize();
-            this.#bbox = bbox;
             onLoad();
         });
     }
@@ -42,23 +40,6 @@ export default class Track
     get firstTile()
     {
         return this.#tiles[0].center;
-    }
-
-    /** @param {Vector3} car */
-    update(car)
-    {
-        if (
-            car.z > this.#tiles[0].end.y &&
-            !this.#tiles[0].intersects(this.#bbox)
-        ) {
-            this.#tiles.shift().dispose();
-            const last = this.#tiles.length - 1;
-            const { x, y } = this.#tiles[last].end;
-
-            this.#tiles.push(new Base(
-                this.#size, new Vector3(x, -0.5, this.#halfDepth + y), this.#asphalt.clone()
-            ));
-        }
     }
 
     dispose()

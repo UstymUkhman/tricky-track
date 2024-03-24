@@ -2,12 +2,14 @@ import { DirectionalLightHelper } from "three/src/helpers/DirectionalLightHelper
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
 import { PMREMGenerator } from 'three/src/extras/PMREMGenerator';
-import { Water } from "three/examples/jsm/objects/Water.js";
-import { Sky } from "three/examples/jsm/objects/Sky.js";
+import { PlaneHelper } from "three/src/helpers/PlaneHelper";
+import { Water } from "three/examples/jsm/objects/Water";
 import { RepeatWrapping } from "three/src/constants";
 import { MathUtils } from "three/src/math/MathUtils";
+import { Sky } from "three/examples/jsm/objects/Sky";
 
 import { Vector3 } from "three/src/math/Vector3";
+import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Loader } from '../utils/Assets';
 import Mouse from "../controls/Mouse";
@@ -21,6 +23,7 @@ export default class extends Level
 {
     #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
 
+    #waterPlane = new Plane(new Vector3(0, 1, 0));
     #car = new Car(this.#setCamera.bind(this));
     /** @type {PMREMGenerator} */ #pmrem;
     #tick = this.#update.bind(this);
@@ -54,7 +57,7 @@ export default class extends Level
         this.camera.position.set(0, 10, -35);
         this.camera.rotation.set(0.25, Math.PI, 0);
 
-        this.#track = new Track(this.#car.bbox, () =>
+        this.#track = new Track(() =>
         {
             RAF.pause = false;
         });
@@ -110,9 +113,14 @@ export default class extends Level
     /** @param {Vector3} sun */
     async #createWater(sun)
     {
+        this.#waterPlane.translate(new Vector3(0, -0.5, 0));
         const water = await Loader.loadTexture("water.jpg");
         const { white, lightseagreen } = Color.NAMES;
         water.wrapS = water.wrapT = RepeatWrapping;
+
+        DEBUG && this.scene.add(new PlaneHelper(
+            this.#waterPlane, 1e3, Color.NAMES.blueviolet
+        ));
 
         this.#water = new Water(new PlaneGeometry(1e3, 1e3),
         {
@@ -138,7 +146,7 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        const position = this.#car.update(this.#track.firstTile);
+        const position = this.#car.update(this.#waterPlane, this.#track.firstTile);
         const { x, z } = this.#directionalLight.userData.position;
 
         this.#water.material.uniforms.time.value += delta * 0.001;
@@ -152,7 +160,6 @@ export default class extends Level
         this.#water.position.z = position.z;
 
         this.#mouse.update(position);
-        this.#track.update(position);
 
         super.update();
 

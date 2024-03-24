@@ -1,6 +1,6 @@
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
 import { Vector3 } from "three/src/math/Vector3";
-import { Vector2 } from "three/src/math/Vector2";
+// import { Vector2 } from "three/src/math/Vector2";
 import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import BaseMaterial from "../materials/Base";
@@ -10,8 +10,6 @@ import Physics from "../physics";
 
 export default class Base
 {
-    #bbox = new Box3();
-    #end = new Vector2();
     #center = new Vector3();
     /** @type {Mesh} */ #mesh;
 
@@ -30,28 +28,21 @@ export default class Base
         Physics.addStaticBox(this.#mesh);
         this.#mesh.receiveShadow = true;
 
-        this.#bbox.setFromObject(this.#mesh);
-        this.#bbox.getCenter(this.#center);
-        const { x, z } = this.#bbox.max;
+        const bbox = new Box3();
+        // const end = new Vector2();
+
+        bbox.setFromObject(this.#mesh);
+        bbox.getCenter(this.#center);
+
+        // const { x, z } = bbox.max;
+        // end.set((bbox.min.x + x) * 0.5, z);
 
         Emitter.dispatch("Scene::Add", this.#mesh);
-        this.#end.set((this.#bbox.min.x + x) * 0.5, z);
-    }
-
-    /** @param {Box3} bbox */
-    intersects(bbox)
-    {
-        return this.#bbox.intersectsBox(bbox);
     }
 
     get center()
     {
         return this.#center;
-    }
-
-    get end()
-    {
-        return this.#end;
     }
 
     dispose()
