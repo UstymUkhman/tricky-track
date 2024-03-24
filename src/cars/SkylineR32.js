@@ -5,6 +5,7 @@ import { Emitter } from "../utils/Events";
 import { Color } from "three/src/math/Color";
 import { Mesh } from "three/src/objects/Mesh";
 import { Vector3 } from "three/src/math/Vector3";
+import { Quaternion } from "three/src/math/Quaternion";
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
 import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
 
@@ -12,6 +13,10 @@ export default class SkylineR32 extends Car
 {
     #controls = Controls;
     #position = new Vector3();
+
+    #tileScale = new Vector3();
+    #tilePosition = new Vector3();
+    #tileRotation = new Quaternion();
 
     /** @param {(chassis: import("three").Mesh) => void} onLoad */
     constructor(onLoad)
@@ -93,15 +98,16 @@ export default class SkylineR32 extends Car
         return models[0];
     }
 
-    /** @override @param {import("three").Plane} water @param {Vector3} tile */
+    /** @override @param {import("three").Plane} water @param {import("three").Matrix4} tile */
     update(water, tile)
     {
         super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
 
         if (super.intersects(water))
         {
-            tile.y = 5.14;
-            super.reset(tile);
+            tile.decompose(this.#tilePosition, this.#tileRotation, this.#tileScale);
+            this.#tilePosition.y = 5.14;
+            super.reset(this.#tilePosition, this.#tileRotation);
         }
 
         return this.#position;

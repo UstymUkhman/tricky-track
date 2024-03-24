@@ -146,7 +146,7 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        const position = this.#car.update(this.#waterPlane, this.#track.firstTile);
+        const position = this.#car.update(this.#waterPlane, this.#track.tile);
         const { x, z } = this.#directionalLight.userData.position;
 
         this.#water.material.uniforms.time.value += delta * 0.001;

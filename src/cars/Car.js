@@ -95,8 +95,8 @@ export default class Car
         }
     }
 
-    /** @param {Vector3} position */
-    reset(position)
+    /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotation */
+    reset(position, rotation)
     {
         this.#vehicle.applyEngineForce(0, 2);
         this.#vehicle.applyEngineForce(0, 3);
@@ -108,7 +108,7 @@ export default class Car
         this.#vehicle.setBrake(Infinity, 3);
 
         this.#chassis.position.copy(position);
-        this.#chassis.rotation.set(0, 0, 0);
+        this.#chassis.quaternion.copy(rotation);
 
         Physics.teleportDynamicBody(this.#chassis);
 

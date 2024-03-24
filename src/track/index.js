@@ -37,9 +37,9 @@ export default class Track
         );
     }
 
-    get firstTile()
+    get tile()
     {
-        return this.#tiles[0].center;
+        return this.#tiles[0].matrix;
     }
 
     dispose()
