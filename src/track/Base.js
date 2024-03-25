@@ -16,46 +16,53 @@ export default class Base
      * @param {import("three").Texture} map
      * @param {boolean} hidden
      */
-    constructor(size, position, map, hidden = true)
+    constructor(size, position, map, opacity = 0)
     {
-        this.#target = position.y - size.y;
+        this.#target = position.y - 2;
         const min = Math.min(size.x, size.z);
         map.repeat.set(size.x / min, size.z / min);
 
         this.#mesh = new Mesh(
             new BoxGeometry(size.x, size.y, size.z),
-            new BaseMaterial({ map, side: FrontSide, ...(hidden && {
-                transparent: true, opacity: 0
-            })})
+            new BaseMaterial({ transparent: true, side: FrontSide, opacity, map })
         );
 
         this.#mesh.receiveShadow = true;
         this.#mesh.position.copy(position);
-        Physics.addKinematicBox(this.#mesh);
 
+        Physics.addKinematicBox(this.#mesh);
         Emitter.dispatch("Scene::Add", this.#mesh);
     }
 
-    /** @param {number} delta */
-    update(delta)
+    /** @param {number} delta @param {number} speed */
+    move(delta, speed)
     {
+        speed *= 1e-3;
         let { opacity } = this.#mesh.material;
 
-        if (opacity === 1)
+        opacity = Math.max(opacity - speed - 64e-4, 0);
+        this.#mesh.position.y -= delta * (speed + 4e-4);
+
+        this.#mesh.material.opacity = opacity;
+        Physics.moveKinematicBody(this.#mesh);
+
+        if (this.#mesh.position.y <= this.#target)
         {
-            this.#mesh.position.y -= delta * 0.0002;
-            Physics.moveKinematicBody(this.#mesh);
-
-            if (this.#mesh.position.y <= this.#target)
-            {
-                this.dispose();
-                return true;
-            }
-
-            return false;
+            this.dispose();
+            return true;
         }
 
-        opacity = Math.min(opacity + delta * 0.002, 1);
+        return false;
+    }
+
+    /** @param {number} delta @param {number} speed */
+    fade(delta, speed)
+    {
+        const opacityFactor = ++speed * 1e-3;
+        let { opacity } = this.#mesh.material;
+
+        opacity = Math.min(opacity + delta * opacityFactor, 1);
+
         this.#mesh.material.opacity = opacity;
         return opacity === 1;
     }
@@ -63,6 +70,11 @@ export default class Base
     get matrix()
     {
         return this.#mesh.matrixWorld;
+    }
+
+    get center()
+    {
+        return this.#mesh.position;
     }
 
     dispose()

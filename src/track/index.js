@@ -17,8 +17,8 @@ export default class Track
         this.#createAsphalt().then(() =>
         {
             this.#tiles.push(
-                new Base(this.#size, new Vector3(0, -0.5,   0), this.#asphalt.clone(), false),
-                new Base(this.#size, new Vector3(0, -0.5,  50), this.#asphalt.clone(), false),
+                new Base(this.#size, new Vector3(0, -0.5,   0), this.#asphalt.clone(), 1),
+                new Base(this.#size, new Vector3(0, -0.5,  50), this.#asphalt.clone(), 1),
                 new Base(this.#size, new Vector3(0, -0.5, 100), this.#asphalt.clone())
             );
 
@@ -33,27 +33,29 @@ export default class Track
         this.#asphalt.wrapS = this.#asphalt.wrapT = RepeatWrapping;
     }
 
-    /** @param {number} delta */
-    update(delta)
+    /** @param {number} delta @param {number} speed */
+    update(delta, speed)
     {
         if (!this.#ready) return;
+        speed = speed * 1e-2 | 0;
 
-        if (this.#tiles[0].update(delta))
+        if (this.#tiles[0].move(delta, speed))
         {
             this.#tiles.splice(0, 1);
             this.#nextTile--;
         }
 
-        if (this.#tiles[this.#nextTile].update(delta))
+        if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta, speed))
         {
-            const z = ++this.#nextTile * 50;
+            this.#nextTile++;
+            const z = this.#tiles[this.#tiles.length - 1].center.z + 50;
             this.#tiles.push(new Base(this.#size, new Vector3(0, -0.5, z), this.#asphalt.clone()));
         }
     }
 
     get tile()
     {
-        return this.#tiles[0].matrix;
+        return this.#tiles[1].matrix;
     }
 
     dispose()

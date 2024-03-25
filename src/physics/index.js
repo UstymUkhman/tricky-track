@@ -194,7 +194,7 @@ class Physics
     /** @param {import("three").Mesh} mesh */
     teleportDynamicBody(mesh)
     {
-        const index = this.#dynamicBodies.findIndex(({ mesh: { uuid } }) => mesh.uuid === uuid);
+        const index = this.#dynamicBodies.findIndex(({ mesh: { uuid }}) => mesh.uuid === uuid);
         if (index === -1) return;
         const { position, quaternion } = mesh;
 

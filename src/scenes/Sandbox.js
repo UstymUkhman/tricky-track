@@ -4,8 +4,10 @@ import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
 
 import GroundMaterial from "../materials/Ground";
+import { Vector3 } from "three/src/math/Vector3";
 import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
+import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
 
@@ -17,6 +19,7 @@ import Level from "./Level";
 
 export default class extends Level
 {
+    #groundPlane = new Plane(new Vector3(0, 1, 0));
     #car = new Car(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
     #tick = this.#update.bind(this);
@@ -82,6 +85,10 @@ export default class extends Level
         ground.rotateX(-PI.d2);
         ground.receiveShadow = true;
 
+        this.#groundPlane.translate(
+            new Vector3(0, -1, 0)
+        );
+
         Physics.addStaticPlane(ground);
         this.scene.add(ground);
     }
@@ -103,10 +110,10 @@ export default class extends Level
     {
         this.stats?.begin();
 
+        this.#car.update(this.#groundPlane);
         this.#controls.update();
-        this.#car.update();
-        super.update();
 
+        super.update();
         this.stats?.end();
     }
 

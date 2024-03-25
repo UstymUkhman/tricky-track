@@ -113,7 +113,7 @@ export default class extends Level
     /** @param {Vector3} sun */
     async #createWater(sun)
     {
-        this.#waterPlane.translate(new Vector3(0, -0.5, 0));
+        this.#waterPlane.translate(new Vector3(0, -0.95, 0));
         const water = await Loader.loadTexture("water.jpg");
         const { white, lightseagreen } = Color.NAMES;
         water.wrapS = water.wrapT = RepeatWrapping;
@@ -137,7 +137,7 @@ export default class extends Level
         });
 
         this.#water.rotation.x = -PI.d2;
-        this.#water.position.y = -0.5;
+        this.#water.position.y = -0.95;
         this.scene.add(this.#water);
     }
 
@@ -159,8 +159,9 @@ export default class extends Level
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
 
+        const { speed } = this.#car;
         this.#mouse.update(position);
-        this.#track.update(delta);
+        this.#track.update(delta, speed);
 
         super.update();
 

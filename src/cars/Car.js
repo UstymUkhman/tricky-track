@@ -1,5 +1,5 @@
 import { Box3 } from "three/src/math/Box3";
-import { Loader } from '../utils/Assets';
+import { Loader } from "../utils/Assets";
 import Physics from "../physics";
 
 export default class Car

@@ -11,6 +11,7 @@ import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
 
 export default class SkylineR32 extends Car
 {
+    #active = true;
     #controls = Controls;
     #position = new Vector3();
 
@@ -103,10 +104,14 @@ export default class SkylineR32 extends Car
     {
         super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
 
-        if (super.intersects(water))
+        if (this.#active && super.intersects(water))
         {
             tile.decompose(this.#tilePosition, this.#tileRotation, this.#tileScale);
+
+            this.#active = false;
             this.#tilePosition.y = 5.14;
+
+            setTimeout(() => this.#active = true, 1e3);
             super.reset(this.#tilePosition, this.#tileRotation);
         }
 
