@@ -52,8 +52,7 @@ export const DELTA_UPDATE = 1 / 0.06;
 export const DELTA_FRAME = 1 / 60;
 
 export const PI = Object.freeze(
-    {
-        m2: Math.PI * 2,
-        d2: Math.PI * 0.5
-    }
-);
+{
+    m2: Math.PI * 2,
+    d2: Math.PI * 0.5
+});

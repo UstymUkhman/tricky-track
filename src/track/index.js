@@ -1,14 +1,11 @@
 import { RepeatWrapping } from "three/src/constants";
-import { Vector3 } from "three/src/math/Vector3";
 import { Loader } from '../utils/Assets';
 import Base from "./Base";
 
 export default class Track
 {
-    #ready = false; #nextTile = 2;
-    #size = new Vector3(25, 1, 50);
-
     /** @type {Base[]} */ #tiles = [];
+    #tileIndex = 0; #nextTile = 1; #ready = false;
     /** @type {import("three").Texture} */ #asphalt;
 
     /** @param {() => void} onLoad */
@@ -16,14 +13,10 @@ export default class Track
     {
         this.#createAsphalt().then(() =>
         {
-            this.#tiles.push(
-                new Base(this.#size, new Vector3(0, -0.5,   0), this.#asphalt.clone(), 1),
-                new Base(this.#size, new Vector3(0, -0.5,  50), this.#asphalt.clone(), 1),
-                new Base(this.#size, new Vector3(0, -0.5, 100), this.#asphalt.clone())
-            );
+            this.#tiles.push(new Base(this.#asphalt.clone(), undefined, this.#tileIndex++));
+            this.#tiles.push(new Base(this.#asphalt.clone(), undefined, this.#tileIndex++));
 
-            setTimeout(() => this.#ready = true, 3e3);
-            onLoad();
+            setTimeout(() => this.#ready = true, 3e3) && onLoad();
         });
     }
 
@@ -47,9 +40,8 @@ export default class Track
 
         if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta, speed))
         {
+            this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex++));
             this.#nextTile++;
-            const z = this.#tiles[this.#tiles.length - 1].center.z + 50;
-            this.#tiles.push(new Base(this.#size, new Vector3(0, -0.5, z), this.#asphalt.clone()));
         }
     }
 
