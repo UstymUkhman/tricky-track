@@ -1,21 +1,26 @@
 import { Object3D } from "three/src/core/Object3D";
-import { PI, clamp } from "../utils/Number";
+import { PI, clamp, lerp } from "../utils/Number";
+import { Vector2 } from "three/src/math/Vector2";
 import { Emitter } from "../utils/Events";
 
 export default class Mouse
 {
-    #pointerlockchange = this.#pointerLockChange.bind(this);
+    #reset = 0;
+    #timeout = 0;
+    #locked = false;
+
+    #minX = 0 - 0.25;
+    #maxX = PI.d2 - 1;
+    #sensitivity = 2e-3;
+
+    #yaw = new Object3D();
+    #pitch = new Object3D();
+    #rotation = new Vector2();
 
     #mousedown = this.#mouseDown.bind(this);
     #mousemove = this.#mouseMove.bind(this);
 
-    #pitch = new Object3D();
-    #yaw = new Object3D();
-
-    #sensitivity = 2e-3;
-    #maxX = PI.d2 - 1;
-    #minX = 0 - 0.25;
-    #locked = false;
+    #pointerlockchange = this.#pointerLockChange.bind(this);
 
     /** @param {import("three").PerspectiveCamera} camera */
     constructor (camera, height = 5)
@@ -55,9 +60,17 @@ export default class Mouse
         const movementX = event.movementX || 0;
         const movementY = event.movementY || 0;
 
+        this.#reset = +!!clearTimeout(this.#timeout);
+
         this.#yaw.rotation.y -= movementX * this.#sensitivity;
         this.#pitch.rotation.x += movementY * this.#sensitivity;
         this.#pitch.rotation.x = clamp(this.#pitch.rotation.x, this.#minX, this.#maxX);
+
+        this.#timeout = setTimeout(() =>
+        {
+            this.#rotation.set(this.#pitch.rotation.x, this.#yaw.rotation.y);
+            this.#reset = Date.now();
+        }, 2500);
     }
 
     #removeEvents()
@@ -67,10 +80,23 @@ export default class Mouse
         window.removeEventListener("mousemove", this.#mousemove, false);
     }
 
-    /** @param {import("three").Vector3} position */
-    update(position)
+    /** @param {import("three").Vector3} position @param {(yaw: number) => number} getCarRotation */
+    update(position, getCarRotation)
     {
-        this.#yaw.position.copy(position);
+        this.#yaw.position.set(position.x, Math.max(position.y, 0), position.z);
+
+        if (this.#reset)
+        {
+            const time = Date.now() - this.#reset;
+            const delta = Math.min(time * 2e-3, 1);
+
+            const rotation = getCarRotation(this.#rotation.y);
+
+            this.#pitch.rotation.x = lerp(this.#rotation.x, 0, delta);
+            this.#yaw.rotation.y = lerp(this.#rotation.y, rotation, delta);
+
+            delta === 1 && this.#rotation.setScalar(this.#reset = 0);
+        }
     }
 
     dispose()

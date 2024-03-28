@@ -21,18 +21,19 @@ import Level from "./Level";
 
 export default class extends Level
 {
-    #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
-
-    #waterPlane = new Plane(new Vector3(0, 1, 0));
-    #car = new Car(this.#setCamera.bind(this));
-    /** @type {PMREMGenerator} */ #pmrem;
-    #tick = this.#update.bind(this);
-
-    /** @type {Water} */ #water;
-    /** @type {Track} */ #track;
-    /** @type {Mouse} */ #mouse;
-
     #sky = new Sky();
+
+    /** @type {Mouse} */ #mouse;
+    /** @type {Track} */ #track;
+    /** @type {Water} */ #water;
+
+    #tick = this.#update.bind(this);
+    /** @type {PMREMGenerator} */ #pmrem;
+    #car = new Car(this.#setCamera.bind(this));
+    #waterPlane = new Plane(new Vector3(0, 1, 0));
+
+    #carRotation = this.#car.getRotation.bind(this.#car);
+    #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
 
     constructor()
     {
@@ -113,8 +114,8 @@ export default class extends Level
     /** @param {Vector3} sun */
     async #createWater(sun)
     {
-        this.#waterPlane.translate(new Vector3(0, -0.95, 0));
         const water = await Loader.loadTexture("water.jpg");
+        this.#waterPlane.translate(new Vector3(0, -50, 0));
         const { white, lightseagreen } = Color.NAMES;
         water.wrapS = water.wrapT = RepeatWrapping;
 
@@ -156,12 +157,11 @@ export default class extends Level
 
         this.#sky.position.set(position.x, 0, position.z);
 
+        this.#mouse.update(position, this.#carRotation);
+        this.#track.update(delta, this.#car.speed);
+
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
-
-        const { speed } = this.#car;
-        this.#mouse.update(position);
-        this.#track.update(delta, speed);
 
         super.update();
 

@@ -1,10 +1,13 @@
+import { Vector3 } from "three/src/math/Vector3";
 import { Box3 } from "three/src/math/Box3";
+import { Emitter } from "../utils/Events";
 import { Loader } from "../utils/Assets";
 import Physics from "../physics";
 
 export default class Car
 {
     #bbox = new Box3();
+    #dir = new Vector3();
 
     /** @type {object} */ #config;
     /** @type {object} */ #vehicle;
@@ -111,6 +114,7 @@ export default class Car
         this.#chassis.quaternion.copy(rotation);
 
         Physics.teleportDynamicBody(this.#chassis);
+        Emitter.dispatch("Car::Reset", this.rotation);
 
         this.#bbox.copy(this.#chassis.geometry.boundingBox)
             .applyMatrix4(this.#chassis.matrixWorld);
@@ -122,6 +126,22 @@ export default class Car
         return this.#bbox.intersectsPlane(plane);
     }
 
+    /** @param {number} yaw */
+    getRotation(yaw)
+    {
+        const { y } = this.#chassis.rotation;
+        this.#chassis.getWorldDirection(this.#dir);
+
+        return this.#dir.z > 0 ? y : yaw > 0
+            ? Math.PI - y : y - Math.PI;
+    }
+
+    /** @returns {number} */
+    get speed()
+    {
+        return this.#vehicle.getCurrentSpeedKmHour();
+    }
+
     dispose()
     {
         this.#vehicle = undefined;
@@ -129,11 +149,5 @@ export default class Car
         this.#tuning = undefined;
         this.#wheels.length = 0;
         this.#steering = 0;
-    }
-
-    /** @returns {number} */
-    get speed()
-    {
-        return this.#vehicle.getCurrentSpeedKmHour();
     }
 }
