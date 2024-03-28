@@ -14,7 +14,7 @@ export default class Track
         this.#createAsphalt().then(() =>
         {
             this.#tiles.push(new Base(this.#asphalt.clone(), undefined, this.#tileIndex++));
-            this.#tiles.push(new Base(this.#asphalt.clone(), undefined, this.#tileIndex++));
+            this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex++));
 
             setTimeout(() => this.#ready = true, 3e3) && onLoad();
         });

@@ -5,11 +5,6 @@ export default class Keyboard extends Input
     #keydown = this.#keyDown.bind(this);
     #keyup   = this.#keyUp.bind(this);
 
-    #accelerate = "w";
-    #steerRight = "d";
-    #steerLeft  = "a";
-    #brake      = "s";
-
     constructor()
     {
         super();
@@ -45,19 +40,23 @@ export default class Keyboard extends Input
     {
         switch (key)
         {
-            case this.#accelerate:
+            case "w":
+            case "ArrowUp":
                 super.accelerate = pressed;
             break;
 
-            case this.#steerRight:
+            case "d":
+            case "ArrowRight":
                 super.steer = +pressed * 1;
             break;
 
-            case this.#steerLeft:
+            case "a":
+            case "ArrowLeft":
                 super.steer = -pressed * 1;
             break;
 
-            case this.#brake:
+            case "s":
+            case "ArrowDown":
                 super.brake = pressed;
             break;
         }

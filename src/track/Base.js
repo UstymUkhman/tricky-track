@@ -1,15 +1,17 @@
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
+import { /* randomInt, */ random } from "../utils/Number";
 import { Object3D } from "three/src/core/Object3D";
 import { Vector3 } from "three/src/math/Vector3";
 import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import BaseMaterial from "../materials/Base";
 import { Emitter } from "../utils/Events";
-import { random } from "../utils/Number";
 import Physics from "../physics";
 
 export default class Base
 {
+    #corner = new Object3D();
+
     /** @type {Mesh} */ #mesh;
     /** @type {Vector3[]} */ #corners =
         Array.from({ length: 4 }).map(() => new Vector3());
@@ -21,7 +23,7 @@ export default class Base
      */
     constructor(map, tile, index)
     {
-        const size = new Vector3(20, 1, 50);
+        const size = this.#setMeshSize(/* tile */);
         const y = -0.5 - index % 2 * 5e-3;
 
         const min = Math.min(size.x, size.z);
@@ -29,10 +31,10 @@ export default class Base
 
         this.#mesh = new Mesh(
             new BoxGeometry(size.x, size.y, size.z),
-            new BaseMaterial({ transparent: true, opacity: +!tile, side: FrontSide, map })
+            new BaseMaterial({ opacity: +!(tile && index > 1), transparent: true, side: FrontSide, map })
         );
 
-        this.#mesh.rotation.y = tile?.rotation + random(-1, 1) || 0;
+        this.#mesh.rotation.y = this.#setMeshRotation(tile?.rotation);
         this.#mesh.position.set(0, y, tile?.center ?? 0);
         this.#mesh.receiveShadow = true;
 
@@ -43,23 +45,43 @@ export default class Base
         Emitter.dispatch("Scene::Add", this.#mesh);
     }
 
+    /** @param {Base | undefined} tile */
+    #setMeshSize(/* tile */)
+    {
+        // const rand = Math.random();
+        // const randWidth = randomInt(20, 50);
+        // const width = tile?.width ?? randWidth;
+        // const x = rand < 0.6 && rand > 0.4 && randWidth;
+        return new Vector3(25 /* x || width */, 1, 50 /* randomInt(50, 100) */);
+    }
+
+    /** @param {number | undefined} rotation */
+    #setMeshRotation(rotation)
+    {
+        const rand = Math.random();
+        const rotate = rand < 0.6 && rand > 0.4;
+        return rotation + +rotate * random(-1, 1) || 0;
+    }
+
     #computeCornersPosition()
     {
+        const { width, depth } = this.#mesh.geometry.parameters;
+
+        const halfWidth = width * 0.5;
+        const halfDepth = depth * 0.5;
+
         this.#corners.forEach((corner, c) =>
         {
-            const vertex = new Object3D();
-
             const position = new Vector3(
-                Math.abs(c - 1.5 | 0) * 20 - 10,
-                0,
-                +(c < 2) * 50 - 25
+                Math.abs(c - 1.5 | 0) * width - halfWidth,
+                0, +(c < 2) * depth - halfDepth
             );
 
-            this.#mesh.add(vertex);
-            vertex.position.copy(position);
+            this.#mesh.add(this.#corner);
+            this.#corner.position.copy(position);
 
-            vertex.getWorldPosition(position);
-            this.#mesh.remove(vertex);
+            this.#corner.getWorldPosition(position);
+            this.#mesh.remove(this.#corner);
             corner.copy(position);
         });
     }
@@ -79,7 +101,7 @@ export default class Base
     /** @param {number} delta @param {number} speed */
     move(delta, speed)
     {
-        speed *= 1e-3;
+        speed *= 1e-3; // 5e-4
         let { opacity } = this.#mesh.material;
 
         opacity = Math.max(opacity - speed - 64e-4, 0);
@@ -100,7 +122,7 @@ export default class Base
     /** @param {number} delta @param {number} speed */
     fade(delta, speed)
     {
-        const opacityFactor = ++speed * 1e-3;
+        const opacityFactor = ++speed * 1e-3; // 5e-4
         let { opacity } = this.#mesh.material;
 
         opacity = Math.min(opacity + delta * opacityFactor, 1);
@@ -129,8 +151,14 @@ export default class Base
         return this.#mesh.position.z;
     }
 
+    /* get width()
+    {
+        return this.#mesh.geometry.parameters.width;
+    } */
+
     dispose()
     {
+        this.#corners.splice(0);
         Physics.removeKinematicBody(this.#mesh);
         Emitter.dispatch("Scene::Remove", this.#mesh);
     }
