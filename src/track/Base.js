@@ -1,5 +1,5 @@
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
-import { /* randomInt, */ random } from "../utils/Number";
+import { randomInt, random } from "../utils/Number";
 import { Object3D } from "three/src/core/Object3D";
 import { Vector3 } from "three/src/math/Vector3";
 import { FrontSide } from "three/src/constants";
@@ -11,6 +11,8 @@ import Physics from "../physics";
 export default class Base
 {
     #corner = new Object3D();
+    // #UP = new Vector3(0, 1, 0);
+    // #direction = new Vector3();
 
     /** @type {Mesh} */ #mesh;
     /** @type {Vector3[]} */ #corners =
@@ -23,8 +25,8 @@ export default class Base
      */
     constructor(map, tile, index)
     {
-        const size = this.#setMeshSize(/* tile */);
-        const y = -0.5 - index % 2 * 5e-3;
+        const rotation = this.#getMeshRotation(tile?.rotation);
+        const size = this.#setMeshSize(tile, rotation);
 
         const min = Math.min(size.x, size.z);
         map.repeat.set(size.x / min, size.z / min);
@@ -34,8 +36,8 @@ export default class Base
             new BaseMaterial({ opacity: +!(tile && index > 1), transparent: true, side: FrontSide, map })
         );
 
-        this.#mesh.rotation.y = this.#setMeshRotation(tile?.rotation);
-        this.#mesh.position.set(0, y, tile?.center ?? 0);
+        this.#mesh.position.set(0, -0.5 - index % 2 * 5e-3, tile?.center ?? 0);
+        this.#mesh.rotation.y = rotation;
         this.#mesh.receiveShadow = true;
 
         this.#computeCornersPosition();
@@ -45,18 +47,22 @@ export default class Base
         Emitter.dispatch("Scene::Add", this.#mesh);
     }
 
-    /** @param {Base | undefined} tile */
-    #setMeshSize(/* tile */)
+    /** @param {Base | undefined} tile, @param {number} rotation */
+    #setMeshSize(tile, rotation)
     {
-        // const rand = Math.random();
-        // const randWidth = randomInt(20, 50);
-        // const width = tile?.width ?? randWidth;
-        // const x = rand < 0.6 && rand > 0.4 && randWidth;
-        return new Vector3(25 /* x || width */, 1, 50 /* randomInt(50, 100) */);
+        const rand = Math.random();
+        const randWidth = randomInt(20, 50);
+        const width = tile?.width ?? randWidth;
+        const x = rand < 0.6 && rand > 0.4 && randWidth;
+
+        return new Vector3(
+            tile?.rotation === rotation && x || width,
+            1, 50 // randomInt(50, 100)
+        );
     }
 
     /** @param {number | undefined} rotation */
-    #setMeshRotation(rotation)
+    #getMeshRotation(rotation)
     {
         const rand = Math.random();
         const rotate = rand < 0.6 && rand > 0.4;
@@ -94,6 +100,21 @@ export default class Base
 
         this.#mesh.position.x -= dist.x;
         this.#mesh.position.z -= dist.z;
+
+        /* if (this.width !== tile.width)
+        {
+            this.#mesh.getWorldDirection(this.#direction);
+            this.#direction.cross(this.#UP); //.normalize();
+
+            if (this.#direction.z < 0)
+            {
+                this.#direction.negate();
+            }
+
+            this.#mesh.translateOnAxis(this.#direction,
+                (tile.width - this.width) * 0.5
+            );
+        } */
 
         this.#computeCornersPosition();
     }
@@ -151,10 +172,10 @@ export default class Base
         return this.#mesh.position.z;
     }
 
-    /* get width()
+    get width()
     {
         return this.#mesh.geometry.parameters.width;
-    } */
+    }
 
     dispose()
     {
