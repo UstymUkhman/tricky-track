@@ -8,6 +8,7 @@ export default class Mouse
     #reset = 0;
     #timeout = 0;
     #locked = false;
+    // #interval = 0;
 
     #minX = 0 - 0.25;
     #maxX = PI.d2 - 1;
@@ -43,6 +44,17 @@ export default class Mouse
     #pointerLockChange()
     {
         this.#locked = !this.#locked;
+        // (this.#locked = !this.#locked) ? this.#resetRotation() : clearInterval(this.#interval);
+    }
+
+    #resetRotation()
+    {
+        // this.#interval = setInterval(() =>
+        this.#timeout = setTimeout(() =>
+        {
+            this.#rotation.set(this.#pitch.rotation.x, this.#yaw.rotation.y);
+            this.#reset = Date.now();
+        }, 1e3);
     }
 
     /** @param {MouseEvent} event */
@@ -60,17 +72,15 @@ export default class Mouse
         const movementX = event.movementX || 0;
         const movementY = event.movementY || 0;
 
-        this.#reset = +!!clearTimeout(this.#timeout);
-
         this.#yaw.rotation.y -= movementX * this.#sensitivity;
+        if (Math.abs(this.#yaw.rotation.y) > Math.PI) this.#yaw.rotation.y *= -1;
+
         this.#pitch.rotation.x += movementY * this.#sensitivity;
         this.#pitch.rotation.x = clamp(this.#pitch.rotation.x, this.#minX, this.#maxX);
 
-        this.#timeout = setTimeout(() =>
-        {
-            this.#rotation.set(this.#pitch.rotation.x, this.#yaw.rotation.y);
-            this.#reset = Date.now();
-        }, 2500);
+        // this.#reset = +!!clearInterval(this.#interval);
+        this.#reset = +!!clearTimeout(this.#timeout);
+        this.#resetRotation();
     }
 
     #removeEvents()
@@ -80,27 +90,43 @@ export default class Mouse
         window.removeEventListener("mousemove", this.#mousemove, false);
     }
 
-    /** @param {import("three").Vector3} position @param {(yaw: number) => number} getCarRotation */
-    update(position, getCarRotation)
+    #sineInOut()
+    {
+        const delta = Math.min((Date.now() - this.#reset) * 2e-3, 1);
+        return (1 - Math.cos(Math.PI * delta)) * 0.5;
+    }
+
+    /** @param {import("three").Vector3} position @param {number} rotation */
+    update(position, rotation)
     {
         this.#yaw.position.set(position.x, Math.max(position.y, 0), position.z);
 
         if (this.#reset)
         {
-            const time = Date.now() - this.#reset;
-            const delta = Math.min(time * 2e-3, 1);
+            const time = this.#sineInOut();
 
-            const rotation = getCarRotation(this.#rotation.y);
+            /* if (this.#yaw.rotation.y < -PI.d2 && rotation > PI.d2)
+            {
+                this.#rotation.setScalar(this.#reset = 0);
+                return this.#yaw.rotation.y = Math.PI;
+            }
 
-            this.#pitch.rotation.x = lerp(this.#rotation.x, 0, delta);
-            this.#yaw.rotation.y = lerp(this.#rotation.y, rotation, delta);
+            else if (this.#yaw.rotation.y > PI.d2 && rotation < -PI.d2)
+            {
+                this.#rotation.setScalar(this.#reset = 0);
+                return this.#yaw.rotation.y = -Math.PI;
+            } */
 
-            delta === 1 && this.#rotation.setScalar(this.#reset = 0);
+            this.#yaw.rotation.y = lerp(this.#rotation.y, rotation, time);
+            this.#pitch.rotation.x = lerp(this.#rotation.x, 0, time);
+            time === 1 && this.#rotation.setScalar(this.#reset = 0);
         }
     }
 
     dispose()
     {
+        // clearInterval(this.#interval);
+        clearTimeout(this.#timeout);
         this.#removeEvents();
         this.#locked = false;
     }

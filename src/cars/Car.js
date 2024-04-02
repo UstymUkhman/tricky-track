@@ -1,3 +1,4 @@
+import { degToRad, radToDeg } from "three/src/math/MathUtils";
 import { Vector3 } from "three/src/math/Vector3";
 import { Box3 } from "three/src/math/Box3";
 import { Emitter } from "../utils/Events";
@@ -12,6 +13,8 @@ export default class Car
     /** @type {object} */ #config;
     /** @type {object} */ #vehicle;
     /** @type {number} */ #steering;
+
+    #FORWARD = new Vector3(0, 0, 1);
 
     /** @type {import("three").Mesh} */ #chassis;
     /** @type {import("three").Mesh[]} */ #wheels = [];
@@ -126,14 +129,10 @@ export default class Car
         return this.#bbox.intersectsPlane(plane);
     }
 
-    /** @param {number} yaw */
-    getRotation(yaw)
+    get rotation()
     {
-        const { y } = this.#chassis.rotation;
-        this.#chassis.getWorldDirection(this.#dir);
-
-        return this.#dir.z > 0 ? y : yaw > 0
-            ? Math.PI - y : y - Math.PI;
+        const { x } = this.#chassis.getWorldDirection(this.#dir);
+        return this.#dir.angleTo(this.#FORWARD) * Math.sign(x) || 1;
     }
 
     /** @returns {number} */
