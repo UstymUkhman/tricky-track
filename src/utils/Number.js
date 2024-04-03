@@ -51,8 +51,5 @@ export const PHI = Math.sqrt(5) * 0.5 + 0.5;
 export const DELTA_UPDATE = 1 / 0.06;
 export const DELTA_FRAME = 1 / 60;
 
-export const PI = Object.freeze(
-{
-    m2: Math.PI * 2,
-    d2: Math.PI * 0.5
-});
+export const HPI = Math.PI * 0.5;
+export const TAU = Math.PI * 2;

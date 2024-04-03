@@ -6,7 +6,7 @@
 
 const Ammo = await (await import("./Ammo")).default();
 import { Vector3 } from "three/src/math/Vector3";
-import { PI } from "../utils/Number";
+import { TAU } from "../utils/Number";
 
 import {
     RIGID_MARGIN,
@@ -105,7 +105,7 @@ class Physics
     addStaticPlane(mesh)
     {
         this.#addStaticBody(mesh, new this.#Engine.btStaticPlaneShape(
-            new this.#Engine.btVector3(0, 0, mesh.rotation.x / -PI.m2), 0
+            new this.#Engine.btVector3(0, 0, mesh.rotation.x / -TAU), 0
         ));
     }
 

@@ -18,8 +18,8 @@ import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Loader } from '../utils/Assets';
 // import Viewport from "../utils/Viewport";
+import { HPI } from "../utils/Number";
 import Mouse from "../controls/Mouse";
-import { PI } from "../utils/Number";
 import Car from "../cars/SkylineR32";
 import RAF from "../utils/RAF";
 import Track from "../track";
@@ -172,8 +172,8 @@ export default class extends Level
             sunColor: white
         });
 
-        this.#water.rotation.x = -PI.d2;
         this.#water.position.y = -0.95;
+        this.#water.rotation.x = -HPI;
         this.scene.add(this.#water);
     }
 

@@ -11,7 +11,7 @@ import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Fog } from "three/src/scenes/Fog";
 
-import { PI } from "../utils/Number";
+import { HPI } from "../utils/Number";
 import Car from "../cars/SkylineR32";
 import Physics from "../physics";
 import RAF from "../utils/RAF";
@@ -82,7 +82,7 @@ export default class extends Level
             new GroundMaterial({ side: FrontSide, color: Color.NAMES.white })
         );
 
-        ground.rotateX(-PI.d2);
+        ground.rotateX(-HPI);
         ground.receiveShadow = true;
 
         this.#groundPlane.translate(

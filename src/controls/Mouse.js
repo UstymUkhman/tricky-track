@@ -1,5 +1,5 @@
+import { HPI, clamp, lerp } from "../utils/Number";
 import { Object3D } from "three/src/core/Object3D";
-import { PI, clamp, lerp } from "../utils/Number";
 import { Vector2 } from "three/src/math/Vector2";
 import { Emitter } from "../utils/Events";
 
@@ -10,8 +10,8 @@ export default class Mouse
     #locked = false;
     // #interval = 0;
 
+    #maxX = HPI - 1;
     #minX = 0 - 0.25;
-    #maxX = PI.d2 - 1;
     #sensitivity = 2e-3;
 
     #yaw = new Object3D();
@@ -105,13 +105,13 @@ export default class Mouse
         {
             const time = this.#sineInOut();
 
-            /* if (this.#yaw.rotation.y < -PI.d2 && rotation > PI.d2)
+            /* if (this.#yaw.rotation.y < -HPI && rotation > HPI)
             {
                 this.#rotation.setScalar(this.#reset = 0);
                 return this.#yaw.rotation.y = Math.PI;
             }
 
-            else if (this.#yaw.rotation.y > PI.d2 && rotation < -PI.d2)
+            else if (this.#yaw.rotation.y > HPI && rotation < -HPI)
             {
                 this.#rotation.setScalar(this.#reset = 0);
                 return this.#yaw.rotation.y = -Math.PI;
