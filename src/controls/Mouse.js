@@ -54,14 +54,14 @@ export default class Mouse
     #mouseMove(event)
     {
         if (!this.#locked) return;
-        this.#reset = Date.now() + 1e3;
 
         const movementX = event.movementX || 0;
         const movementY = event.movementY || 0;
 
+        this.#rotation = +!(this.#reset = Date.now() + 2e3);
         this.#pitch.rotation.x += movementY * this.#sensitivity;
         this.#pitch.rotation.x = clamp(this.#pitch.rotation.x, this.#minX, this.#maxX);
-        this.#yaw.rotation.y += movementX * this.#sensitivity * ((this.#direction > 0) * 2 - 1);
+        this.#yaw.rotation.y -= movementX * this.#sensitivity * ((this.#direction > 0) * 2 - 1);
     }
 
     #removeEvents()

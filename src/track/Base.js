@@ -11,8 +11,6 @@ import Physics from "../physics";
 export default class Base
 {
     #corner = new Object3D();
-    // #UP = new Vector3(0, 1, 0);
-    // #direction = new Vector3();
 
     /** @type {Mesh} */ #mesh;
     /** @type {Vector3[]} */ #corners =
@@ -25,9 +23,7 @@ export default class Base
      */
     constructor(map, tile, index)
     {
-        const rotation = this.#getMeshRotation(tile?.rotation);
-        const size = this.#setMeshSize(tile, rotation);
-
+        const size = this.#setMeshSize(tile);
         const min = Math.min(size.x, size.z);
         map.repeat.set(size.x / min, size.z / min);
 
@@ -37,7 +33,7 @@ export default class Base
         );
 
         this.#mesh.position.set(0, -0.5 - index % 2 * 5e-3, tile?.center ?? 0);
-        this.#mesh.rotation.y = rotation;
+        this.#mesh.rotation.y = this.#getMeshRotation(tile?.rotation);
         this.#mesh.receiveShadow = true;
 
         this.#computeCornersPosition();
@@ -47,18 +43,13 @@ export default class Base
         Emitter.dispatch("Scene::Add", this.#mesh);
     }
 
-    /** @param {Base | undefined} tile, @param {number} rotation */
-    #setMeshSize(tile, rotation)
+    /** @param {Base | undefined} tile */
+    #setMeshSize(tile)
     {
         const rand = Math.random();
-        const randWidth = randomInt(20, 50);
-        const width = tile?.width ?? randWidth;
-        const x = rand < 0.6 && rand > 0.4 && randWidth;
-
-        return new Vector3(
-            tile?.rotation === rotation && x || width,
-            1, 50 // randomInt(50, 100)
-        );
+        const width = tile?.width ?? 50;
+        const x = rand < 0.6 && rand > 0.4 && randomInt(20, 50);
+        return new Vector3(x || width, 1, 50 /* randomInt(50, 100) */);
     }
 
     /** @param {number | undefined} rotation */
@@ -101,20 +92,8 @@ export default class Base
         this.#mesh.position.x -= dist.x;
         this.#mesh.position.z -= dist.z;
 
-        /* if (this.width !== tile.width)
-        {
-            this.#mesh.getWorldDirection(this.#direction);
-            this.#direction.cross(this.#UP); //.normalize();
-
-            if (this.#direction.z < 0)
-            {
-                this.#direction.negate();
-            }
-
-            this.#mesh.translateOnAxis(this.#direction,
-                (tile.width - this.width) * 0.5
-            );
-        } */
+        this.rotation === tile.rotation && this.width !== tile.width &&
+            this.#mesh.translateX((tile.width - this.width) * -0.5);
 
         this.#computeCornersPosition();
     }
