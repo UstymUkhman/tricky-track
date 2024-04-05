@@ -13,8 +13,6 @@ export default class Car
     /** @type {object} */ #vehicle;
     /** @type {number} */ #steering;
 
-    #FORWARD = new Vector3(0, 0, 1);
-
     /** @type {import("three").Mesh} */ #chassis;
     /** @type {import("three").Mesh[]} */ #wheels = [];
     /** @type {object} */ #tuning = Physics.vehicleTuning;
@@ -128,10 +126,14 @@ export default class Car
         return this.#bbox.intersectsPlane(plane);
     }
 
+    get direction()
+    {
+        return this.#chassis.getWorldDirection(this.#dir).z;
+    }
+
     get rotation()
     {
-        const { x } = this.#chassis.getWorldDirection(this.#dir);
-        return this.#dir.angleTo(this.#FORWARD) * Math.sign(x) || 1;
+        return this.#chassis.quaternion;
     }
 
     /** @returns {number} */

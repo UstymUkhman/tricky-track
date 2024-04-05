@@ -191,20 +191,20 @@ export default class extends Level
 
         const position = this.#car.update(this.#waterPlane, this.#track.tile);
         const { x, z } = this.#directionalLight.userData.position;
+        const { rotation, direction, speed } = this.#car;
 
-        this.#water.material.uniforms.time.value += delta * 0.001;
+        this.#water.material.uniforms.time.value += delta * 1e-3;
 
         this.#directionalLight.position.x = position.x + x;
         this.#directionalLight.position.z = position.z + z;
 
         this.#sky.position.set(position.x, 0, position.z);
-
-        this.#mouse.update(position, this.#car.rotation);
-        this.#track.update(delta, this.#car.speed);
+        this.#mouse.update(position, rotation, direction);
 
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
 
+        this.#track.update(delta, speed);
         // this.#composer.render(delta);
 
         super.update();
