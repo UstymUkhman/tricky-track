@@ -1,48 +1,54 @@
 import { DirectionalLightHelper } from "three/src/helpers/DirectionalLightHelper";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-// import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
-// import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
-import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
-// import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass";
+import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass";
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
+// import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
+
 import { PMREMGenerator } from 'three/src/extras/PMREMGenerator';
 import { PlaneHelper } from "three/src/helpers/PlaneHelper";
 import { Water } from "three/examples/jsm/objects/Water";
 import { RepeatWrapping } from "three/src/constants";
 import { MathUtils } from "three/src/math/MathUtils";
 import { Sky } from "three/examples/jsm/objects/Sky";
-
 import { Vector3 } from "three/src/math/Vector3";
 import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
+import { Clock } from "three/src/core/Clock";
+
 import { Loader } from '../utils/Assets';
-// import Viewport from "../utils/Viewport";
+import Viewport from "../utils/Viewport";
 import { HPI } from "../utils/Number";
 import Mouse from "../controls/Mouse";
 import Car from "../cars/SkylineR32";
+import Physics from "../physics";
 import RAF from "../utils/RAF";
 import Track from "../track";
 import Level from "./Level";
 
 export default class extends Level
 {
+    #car = new Car(this.#setCamera.bind(this));
+    #waterPlane = new Plane(new Vector3(0, 1, 0));
     #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
 
-    #waterPlane = new Plane(new Vector3(0, 1, 0));
-    #car = new Car(this.#setCamera.bind(this));
-
+    /** @type {SSAARenderPass | undefined} */ #smaa;
+    /** @type {ShaderPass | undefined} */ #fxaa;
     /** @type {EffectComposer} */ #composer;
     /** @type {PMREMGenerator} */ #pmrem;
 
-    // #scale = this.#resize.bind(this);
+    #scale = this.#resize.bind(this);
     #tick = this.#update.bind(this);
-    /** @type {SMAAPass} */ #smaa;
 
     /** @type {Water} */ #water;
     /** @type {Track} */ #track;
     /** @type {Mouse} */ #mouse;
 
+    #clock = new Clock();
     #sky = new Sky();
 
     constructor()
@@ -51,38 +57,51 @@ export default class extends Level
 
         this.scene.background = new Color(Color.NAMES.skyblue);
         this.#pmrem = new PMREMGenerator(this.renderer);
-        // Viewport.addResizeCallback(this.#scale);
-
+        Viewport.addResizeCallback(this.#scale);
         const sun = this.#createSky();
-        // this.#setEffectComposer();
+
+        this.#setEffectComposer();
         this.#createLights(sun);
         this.#createWater(sun);
-
         RAF.add(this.#tick);
     }
 
-    /* #setEffectComposer()
+    #setEffectComposer()
     {
         const { width, height } = Viewport.size;
-        const ratio = this.renderer.getPixelRatio();
-
         this.#composer = new EffectComposer(this.renderer);
-        this.#smaa = new SMAAPass(width * ratio, height * ratio);
         this.#composer.addPass(new RenderPass(this.scene, this.camera));
+
+        {
+            this.#smaa = new SSAARenderPass(this.scene, this.camera);
+
+            this.#smaa.sampleLevel = 2;
+            this.#smaa.setSize(width, height);
+            this.#composer.addPass(this.#smaa);
+        }
 
         this.#composer.addPass(
             new BokehPass(this.scene, this.camera,
             {
-                aperture: 0.00005,
-                maxblur: 0.005,
-                focus: 20.0
+                maxblur: 0.002,
+                aperture: 1.0,
+                focus: 35.0
             })
         );
 
-        this.#composer.addPass(this.#smaa);
         this.#composer.addPass(new OutputPass());
-        this.#composer.setSize(Viewport.size.width, Viewport.size.height);
-    } */
+        this.#composer.setSize(width, height);
+
+        /* {
+            this.#fxaa = new ShaderPass(FXAAShader);
+            const ratio = this.renderer.getPixelRatio();
+
+            this.#fxaa.material.uniforms.resolution.value.x = 1 / (width * ratio);
+            this.#fxaa.material.uniforms.resolution.value.y = 1 / (height * ratio);
+
+            this.#composer.addPass(this.#fxaa);
+        } */
+    }
 
     /** @param {import("three").Mesh} chassis */
     #setCamera(chassis)
@@ -178,11 +197,19 @@ export default class extends Level
     }
 
     /** @override @param {number} width @param {number} height */
-    /* #resize(width, height)
+    #resize(width, height)
     {
-        this.#smaa.setSize(width, height);
         this.#composer.setSize(width, height);
-    } */
+        this.#smaa?.setSize(width, height);
+
+        if (this.#fxaa)
+        {
+            const ratio = this.renderer.getPixelRatio();
+
+            this.#fxaa.material.uniforms.resolution.value.x = 1 / (width * ratio);
+            this.#fxaa.material.uniforms.resolution.value.y = 1 / (height * ratio);
+        }
+    }
 
     /** @param {number} delta */
     #update(delta)
@@ -192,8 +219,9 @@ export default class extends Level
         const position = this.#car.update(this.#waterPlane, this.#track.tile);
         const { x, z } = this.#directionalLight.userData.position;
         const { rotation, direction, speed } = this.#car;
+        const deltaTime = this.#clock.getDelta();
 
-        this.#water.material.uniforms.time.value += delta * 1e-3;
+        this.#water.material.uniforms.time.value += deltaTime;
 
         this.#directionalLight.position.x = position.x + x;
         this.#directionalLight.position.z = position.z + z;
@@ -205,9 +233,8 @@ export default class extends Level
         this.#water.position.z = position.z;
 
         this.#track.update(delta, speed);
-        // this.#composer.render(delta);
-
-        super.update();
+        Physics.update(deltaTime);
+        this.#composer.render();
 
         this.stats?.end();
     }
@@ -215,10 +242,14 @@ export default class extends Level
     /** @override */
     dispose()
     {
-        // Viewport.removeResizeCallback(this.#scale);
-        // this.#composer.dispose();
+        Viewport.removeResizeCallback(this.#scale);
+        this.#composer.dispose();
         RAF.remove(this.#tick);
+
         this.#pmrem.dispose();
+        this.#smaa?.dispose();
+        this.#fxaa?.dispose();
+
         this.#track.dispose();
         this.#mouse.dispose();
         this.#car.dispose();
