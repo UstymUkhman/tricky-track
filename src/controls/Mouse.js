@@ -77,7 +77,7 @@ export default class Mouse
         return ((delta *= 2) < 1 ? delta * delta * delta : (delta -= 2) * delta * delta + 2) * 0.5;
     }
 
-    /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotatio0 @param {number} direction */
+    /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotation @param {number} direction */
     update(position, rotation, direction)
     {
         this.#yaw.position.set(position.x, Math.max(position.y, 0), position.z);

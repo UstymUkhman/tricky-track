@@ -112,7 +112,7 @@ export default class Base
 
         if (this.#mesh.position.y <= -2.5)
         {
-            this.dispose();
+            this.#dispose();
             return true;
         }
 
@@ -156,7 +156,7 @@ export default class Base
         return this.#mesh.geometry.parameters.width;
     }
 
-    dispose()
+    #dispose()
     {
         this.#corners.splice(0);
         Physics.removeKinematicBody(this.#mesh);

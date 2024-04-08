@@ -1,7 +1,7 @@
 {
     "Default":
     {
-        "suspensionForce": 6e3,
+        "suspensionForce": 6000,
         "suspensionTravelCm": 500,
         "suspensionRestLength": 0.5,
         "suspensionStiffness": 5.88,
@@ -13,22 +13,22 @@
 
     "SkylineR32":
     {
-        "suspensionForce": 6e3,
-        "suspensionTravelCm": 500,
+        "suspensionForce": 7500,
+        "suspensionTravelCm": 100,
         "suspensionRestLength": 0.5,
-        "suspensionStiffness": 20,
-        "dampingCompression": 4.5,
-        "dampingRelaxation": 2.5,
+        "suspensionStiffness": 20.0,
+        "dampingCompression": 4.15,
+        "dampingRelaxation": 2.2,
         "rollInfluence": 0.1,
-        "frictionSlip": 10,
+        "frictionSlip": 100,
 
         "steerLimit": 0.5,
         "steerFactor": 0.05,
         "backBrakeFactor": 1,
         "frontBrakeFactor": 0.5,
-        "reverseForce": -2100,
-        "engineForce": 2800,
-        "brakeForce": 280,
+        "reverseForce": -2800,
+        "engineForce": 3430,
+        "brakeForce": 343,
         "mass": 1430
     }
 }
