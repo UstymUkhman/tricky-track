@@ -9,6 +9,7 @@ import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
+import { Clock } from "three/src/core/Clock";
 import { Fog } from "three/src/scenes/Fog";
 
 import { HPI } from "../utils/Number";
@@ -23,6 +24,7 @@ export default class extends Level
     #car = new Car(() => RAF.pause = false);
     /** @type {OrbitControls} */ #controls;
     #tick = this.#update.bind(this);
+    #clock = new Clock();
 
     constructor()
     {
@@ -110,10 +112,12 @@ export default class extends Level
     {
         this.stats?.begin();
 
+        Physics.update(this.#clock.getDelta());
         this.#car.update(this.#groundPlane);
-        this.#controls.update();
 
-        super.update();
+        this.#controls.update();
+        super.render();
+
         this.stats?.end();
     }
 

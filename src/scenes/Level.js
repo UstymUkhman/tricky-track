@@ -2,13 +2,10 @@ import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
 import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
 import { AmbientLight } from "three/src/lights/AmbientLight";
 import Stats from "three/examples/jsm/libs/stats.module";
-
 import { Scene } from "three/src/scenes/Scene";
-import { Clock } from "three/src/core/Clock";
 import { Color } from "three/src/math/Color";
 import { Emitter } from "../utils/Events";
 import Viewport from "../utils/Viewport";
-import Physics from "../physics";
 
 import {
     SRGBColorSpace,
@@ -27,7 +24,6 @@ export default class Level
     #scale = this.#resize.bind(this);
 
     #scene = new Scene();
-    #clock = new Clock();
 
     constructor()
     {
@@ -154,9 +150,8 @@ export default class Level
         Viewport.removeResizeCallback(this.#scale);
     }
 
-    update()
+    render()
     {
-        Physics.update(this.#clock.getDelta());
         this.#renderer.render(this.#scene, this.#camera);
     }
 
