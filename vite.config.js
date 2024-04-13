@@ -31,5 +31,12 @@ export default({ mode }) =>
             host: "0.0.0.0",
             port: 8080,
             open: true,
+            headers:
+            {
+                // To use SharedArrayBuffer in preview mode:
+                // https://github.com/vitejs/vite/issues/9864
+                "Cross-Origin-Opener-Policy": "same-origin",
+                "Cross-Origin-Embedder-Policy": "require-corp"
+            }
         }
     });
