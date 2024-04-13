@@ -9,7 +9,7 @@
 
 import WebWorker from "./Worker?worker";
 
-export default class Worker
+class Worker
 {
     #worker = new WebWorker();
     /** @type Map<string, EventData> */ #events = new Map();
@@ -41,6 +41,8 @@ export default class Worker
     add(event, callback, params)
     {
         this.#events.set(event, { callback, params });
+
+        return this;
     }
 
     /** @param {string} event @param {EventParams} params */
@@ -56,12 +58,16 @@ export default class Worker
                 ...params
             }
         });
+
+        return this;
     }
 
     /** @param {string} event */
     remove(event)
     {
         this.#events.delete(event);
+
+        return this;
     }
 
     dispose()
@@ -70,3 +76,5 @@ export default class Worker
         this.#events.clear();
     }
 }
+
+export default new Worker();

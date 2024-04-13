@@ -1,4 +1,4 @@
-import Car from "./Car";
+import Car from "./";
 import Config from "./config.json";
 import Controls from "../controls";
 import { Emitter } from "../utils/Events";
@@ -19,11 +19,18 @@ export default class SkylineR32 extends Car
     #tilePosition = new Vector3();
     #tileRotation = new Quaternion();
 
-    /** @param {(chassis: import("three").Mesh) => void} onLoad */
+    /** @param {() => void} onLoad */
     constructor(onLoad)
     {
-        super(Config.SkylineR32);
-        this.#load().then(onLoad);
+        super(Config.SkylineR32, onLoad);
+        this.#load();
+    }
+
+    /** @override */
+    async #load()
+    {
+        const models = await super.load("R32/chassis.glb", "R32/wheel.glb");
+        return this.#add(models);
     }
 
     /** @param {import("three").Group[]} models */
@@ -85,14 +92,6 @@ export default class SkylineR32 extends Car
             backLeftCollider,
             backRightCollider
         ]);
-    }
-
-    /** @override */
-    async #load()
-    {
-        const models = await super.load("R32/chassis.glb", "R32/wheel.glb");
-        this.#add(models);
-        return models[0];
     }
 
     /** @override @param {import("three").Plane} water @param {import("three").Matrix4} tile */
