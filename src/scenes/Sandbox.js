@@ -13,16 +13,20 @@ import { Clock } from "three/src/core/Clock";
 import { Fog } from "three/src/scenes/Fog";
 
 import { HPI } from "../utils/Number";
+import Worker from "../utils/worker";
 import Car from "../cars/SkylineR32";
 import Physics from "../physics";
 import RAF from "../utils/RAF";
+import SAB from "../utils/SAB";
 import Level from "./Level";
 
 export default class extends Level
 {
     #groundPlane = new Plane(new Vector3(0, 1, 0));
-    #car = new Car(() => RAF.pause = false);
+    #physicsInit = this.#initPhysics.bind(this);
+
     /** @type {OrbitControls} */ #controls;
+    /** @type {OrbitControls} */ #car;
     #tick = this.#update.bind(this);
     #clock = new Clock();
 
@@ -32,8 +36,8 @@ export default class extends Level
 
         this.#setScene();
         this.#setCamera();
+        this.#setPhysics();
         this.#createLights();
-        this.#createGround();
         this.#createControls();
 
         RAF.add(this.#tick);
@@ -48,6 +52,38 @@ export default class extends Level
     #setCamera()
     {
         this.camera.position.set(0, 25, -50);
+    }
+
+    #setPhysics()
+    {
+        if (SAB.supported)
+        {
+            Worker.add("Physics::Init", this.#physicsInit).post("Physics::Init");
+        }
+        else
+        {
+            this.#car = new Car(() => RAF.pause = false);
+            this.#createGround();
+        }
+    }
+
+    #initPhysics()
+    {
+        const { uuid, position, quaternion, rotation } = this.#createGround();
+
+        Worker.post("Physics::Add::StaticPlane",
+        {
+            quaternion: quaternion.toJSON(),
+            rotation: rotation.x,
+            position,
+            uuid
+        });
+
+        this.#car = new Car(() =>
+        {
+            Worker.post("Physics::Start");
+            RAF.pause = false;
+        });
     }
 
     #createLights()
@@ -91,8 +127,9 @@ export default class extends Level
             new Vector3(0, -1, 0)
         );
 
-        Physics.addStaticPlane(ground);
+        !SAB.supported && Physics.addStaticPlane(ground);
         this.scene.add(ground);
+        return ground;
     }
 
     #createControls()
@@ -112,7 +149,7 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        Physics.update(this.#clock.getDelta());
+        !SAB.supported && Physics.update(this.#clock.getDelta());
         this.#car.update(this.#groundPlane);
 
         this.#controls.update();
