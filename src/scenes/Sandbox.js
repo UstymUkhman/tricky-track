@@ -26,8 +26,8 @@ export default class extends Level
     #physicsInit = this.#initPhysics.bind(this);
 
     /** @type {OrbitControls} */ #controls;
-    /** @type {OrbitControls} */ #car;
     #tick = this.#update.bind(this);
+    /** @type {Car} */ #car;
     #clock = new Clock();
 
     constructor()

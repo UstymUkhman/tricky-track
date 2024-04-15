@@ -12,13 +12,14 @@ export default class Car
 
     /** @type {object} */ #config;
     /** @type {object} */ #vehicle;
-    /** @type {() => void} */ #onLoad;
 
     /** @type {import("three").Mesh} */ #chassis;
     /** @type {import("three").Mesh[]} */ #wheels = [];
-    /** @type {object} */ #tuning = Physics.vehicleTuning;
 
-    /** @param {object} config @param {() => void} onLoad */
+    /** @type {object} */ #tuning = Physics.vehicleTuning;
+    /** @type {(chassis: import("three").Mesh) => void} */ #onLoad;
+
+    /** @param {object} config @param {(chassis: import("three").Mesh) => void} onLoad */
     constructor(config, onLoad)
     {
         this.#config = config;
@@ -43,7 +44,7 @@ export default class Car
             Physics.addWheel(this.#vehicle, this.#tuning, this.#config, position, height * 0.5, w);
         }
 
-        this.#onLoad();
+        this.#onLoad(this.#chassis.children[0]);
     }
 
     /** @param {boolean} accelerate @param {number} steer @param {boolean} brake */

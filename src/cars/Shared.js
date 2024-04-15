@@ -14,7 +14,6 @@ export default class Car
 
     /** @type {object} */ #config;
     /** @type {object} */ #tuning;
-    /** @type {() => void} */ #onLoad;
 
     #setVehicleTuning = this.#setTuning.bind(this);
     #setVehicleBody   = this.#setVehicle.bind(this);
@@ -22,8 +21,9 @@ export default class Car
 
     /** @type {import("three").Mesh} */ #chassis;
     /** @type {import("three").Mesh[]} */ #wheels = [];
+    /** @type {(chassis: import("three").Mesh) => void} */ #onLoad;
 
-    /** @param {object} config @param {() => void} onLoad */
+    /** @param {object} config @param {(chassis: import("three").Mesh) => void} onLoad */
     constructor(config, onLoad)
     {
         this.#config = config;
@@ -75,7 +75,7 @@ export default class Car
         if (this.#wheels.length === ++this.#loadedWheels)
         {
             Worker.remove("Physics::Add::Wheel", this.#setVehicleWheel);
-            this.#onLoad();
+            this.#onLoad(this.#chassis.children[0]);
         }
     }
 

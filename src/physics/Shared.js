@@ -151,8 +151,8 @@ export default class Physics
         ));
     }
 
-    /** @param {string} uuid */
-    removeStaticBody(uuid)
+    /** @param {{ uuid: string }} */
+    removeStaticBody({ uuid })
     {
         const body = this.#staticBodies.get(uuid);
         if (!body) return;
@@ -191,7 +191,7 @@ export default class Physics
         motionState && motionState.setWorldTransform(this.#transform);
     }
 
-    /** @param {string} uuid */
+    /** @param {{ uuid: string }} */
     removeKinematicBody(uuid)
     {
         const body = this.#kinematicBodies.get(uuid);
@@ -223,7 +223,7 @@ export default class Physics
         ));
     }
 
-    /** @param {string} uuid */
+    /** @param {{ uuid: string }} */
     removeDynamicBody(uuid)
     {
         const body = this.#dynamicBodies.get(uuid);
@@ -344,8 +344,8 @@ export default class Physics
         this.#sharedTransformBuffer[6] = quaternion[3];
 
         const transform = vehicle.getChassisWorldTransform();
-        transform.setRotation(new Ammo.btQuaternion(...quaternion));
-        transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+        transform.setRotation(new this.#Engine.btQuaternion(...quaternion));
+        transform.setOrigin(new this.#Engine.btVector3(position.x, position.y, position.z));
     }
 
     #updateVehicles()
