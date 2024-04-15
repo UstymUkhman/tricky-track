@@ -1,6 +1,6 @@
 class SAB
 {
-    #bytes = 320;
+    #bytes = 320 + 1792;
 
     /**
      * [0 -  6] - Chassis Transform

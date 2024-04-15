@@ -6,13 +6,17 @@ import { FrontSide } from "three/src/constants";
 import { Mesh } from "three/src/objects/Mesh";
 import BaseMaterial from "../materials/Base";
 import { Emitter } from "../utils/Events";
+import Worker from "../utils/worker";
 import Physics from "../physics";
+import SAB from "../utils/SAB";
 
 export default class Base
 {
     #corner = new Object3D();
 
     /** @type {Mesh} */ #mesh;
+    /** @type {number} */ #index;
+
     /** @type {Vector3[]} */ #corners =
         Array.from({ length: 4 }).map(() => new Vector3());
 
@@ -35,12 +39,29 @@ export default class Base
         this.#mesh.position.set(0, -0.5 - index % 2 * 5e-3, tile?.center ?? 0);
         this.#mesh.rotation.y = this.#getMeshRotation(tile?.rotation);
         this.#mesh.receiveShadow = true;
+        this.#index = index;
 
         this.#computeCornersPosition();
         tile && this.#connectLastTile(tile);
-
-        Physics.addKinematicBox(this.#mesh);
         Emitter.dispatch("Scene::Add", this.#mesh);
+
+        if (SAB.supported)
+        {
+            SAB.transformBuffer[40 + 7 * (index % 32)] = this.#mesh.position.x;
+            SAB.transformBuffer[41 + 7 * (index % 32)] = this.#mesh.position.y;
+            SAB.transformBuffer[42 + 7 * (index % 32)] = this.#mesh.position.z;
+
+            SAB.transformBuffer[43 + 7 * (index % 32)] = this.#mesh.quaternion.x;
+            SAB.transformBuffer[44 + 7 * (index % 32)] = this.#mesh.quaternion.y;
+            SAB.transformBuffer[45 + 7 * (index % 32)] = this.#mesh.quaternion.z;
+            SAB.transformBuffer[46 + 7 * (index % 32)] = this.#mesh.quaternion.w;
+
+            Worker.post("Physics::Add::KinematicBox",
+            {
+                width: size.x, height: size.y, depth: size.z, index
+            });
+        }
+        else Physics.addKinematicBox(this.#mesh);
     }
 
     /** @param {Base | undefined} tile */
@@ -108,7 +129,10 @@ export default class Base
         this.#mesh.position.y -= delta * (speed + 4e-4);
 
         this.#mesh.material.opacity = opacity;
-        Physics.moveKinematicBody(this.#mesh);
+
+        SAB.supported
+            ? SAB.transformBuffer[41 + 7 * (this.#index % 32)] = this.#mesh.position.y
+            : Physics.moveKinematicBody(this.#mesh);
 
         if (this.#mesh.position.y <= -2.5)
         {
@@ -159,7 +183,10 @@ export default class Base
     #dispose()
     {
         this.#corners.splice(0);
-        Physics.removeKinematicBody(this.#mesh);
         Emitter.dispatch("Scene::Remove", this.#mesh);
+
+        !SAB.supported
+            ? Physics.removeKinematicBody(this.#mesh)
+            : Worker.post("Physics::Remove::KinematicBody", { index: this.#index });
     }
 }

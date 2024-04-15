@@ -1,7 +1,7 @@
 import Physics from "../../physics/Shared";
 import { Clock } from "three/src/core/Clock";
 
-/** @type {Physics | null} */ let physics = null;
+/** @type {Physics | null} */ let raf, physics = null;
 /** @type {Worker} */ export const Worker = self;
 
 const clock = new Clock();
@@ -10,7 +10,7 @@ function simulationLoop()
 {
     // ...or RAF.delta * 1e-3:
     physics.update(clock.getDelta());
-    requestAnimationFrame(simulationLoop);
+    raf = requestAnimationFrame(simulationLoop);
 }
 
 Worker.onerror = error => console.error(error);
@@ -33,7 +33,7 @@ Worker.onmessage = message =>
         break;
 
         case "Physics::Start":
-            requestAnimationFrame(simulationLoop);
+            raf = requestAnimationFrame(simulationLoop);
         break;
 
         case "Physics::Set::SharedArrayBuffer":
@@ -46,6 +46,14 @@ Worker.onmessage = message =>
 
         case "Physics::Add::KinematicBox":
             physics.addKinematicBox(params);
+        break;
+
+        case "Physics::Move::KinematicBody":
+            physics.moveKinematicBody(params);
+        break;
+
+        case "Physics::Remove::KinematicBody":
+            physics.removeKinematicBody(params);
         break;
 
         case "Physics::Get::VehicleTuning":
@@ -80,6 +88,11 @@ Worker.onmessage = message =>
 
         case "Physics::Reset::Vehicle":
             physics.resetVehicle(params);
+        break;
+
+        case "Physics::Dispose":
+            cancelAnimationFrame(raf);
+            physics.dispose();
         break;
     }
 };
