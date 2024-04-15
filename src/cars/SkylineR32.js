@@ -1,4 +1,5 @@
 import Car from "./";
+import SAB from "../utils/SAB";
 import Config from "./config.json";
 import Controls from "../controls";
 import { Emitter } from "../utils/Events";
@@ -19,7 +20,7 @@ export default class SkylineR32 extends Car
     #tilePosition = new Vector3();
     #tileRotation = new Quaternion();
 
-    /** @param {() => void} onLoad */
+    /** @param {(chassis: Mesh) => void} onLoad */
     constructor(onLoad)
     {
         super(Config.SkylineR32, onLoad);
@@ -110,7 +111,13 @@ export default class SkylineR32 extends Car
             super.reset(this.#tilePosition, this.#tileRotation);
         }
 
-        return this.#position;
+        return !SAB.supported
+            ? this.#position
+            : this.#position.set(
+                SAB.transformBuffer[0],
+                SAB.transformBuffer[1],
+                SAB.transformBuffer[2]
+            );
     }
 
     /** @override */

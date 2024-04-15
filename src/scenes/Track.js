@@ -24,15 +24,17 @@ import { Loader } from '../utils/Assets';
 import Viewport from "../utils/Viewport";
 import { HPI } from "../utils/Number";
 import Mouse from "../controls/Mouse";
+import Worker from "../utils/worker";
 import Car from "../cars/SkylineR32";
 import Physics from "../physics";
 import RAF from "../utils/RAF";
+import SAB from "../utils/SAB";
 import Track from "../track";
 import Level from "./Level";
 
 export default class extends Level
 {
-    #car = new Car(this.#setCamera.bind(this));
+    #physicsInit = this.#setCamera.bind(this);
     #waterPlane = new Plane(new Vector3(0, 1, 0));
     #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
 
@@ -48,6 +50,7 @@ export default class extends Level
     /** @type {Track} */ #track;
     /** @type {Mouse} */ #mouse;
 
+    /** @type {Car} */ #car;
     #clock = new Clock();
     #sky = new Sky();
 
@@ -63,7 +66,50 @@ export default class extends Level
         this.#setEffectComposer();
         this.#createLights(sun);
         this.#createWater(sun);
+
         RAF.add(this.#tick);
+        this.#setPhysics();
+    }
+
+    #setCamera()
+    {
+        this.#car = new Car((chassis) =>
+        {
+            chassis.add(this.camera);
+            this.#mouse = new Mouse(this.camera);
+
+            this.camera.position.set(0, 10, -35);
+            this.camera.rotation.set(0.25, Math.PI, 0);
+
+            this.#track = new Track(() =>
+            {
+                SAB.supported && Worker.post("Physics::Start");
+                RAF.pause = false;
+            });
+        });
+    }
+
+    #createSky()
+    {
+        this.#sky.scale.setScalar(1e3);
+        const { uniforms } = this.#sky.material;
+
+        uniforms.rayleigh.value = 3;
+        uniforms.turbidity.value = 10;
+        uniforms.mieDirectionalG.value = 0.7;
+        uniforms.mieCoefficient.value = 0.005;
+
+        const sun = new Vector3().setFromSphericalCoords(
+            1, MathUtils.degToRad(90 - 2), MathUtils.degToRad(0)
+        );
+
+        uniforms.sunPosition.value.copy(sun);
+
+        this.scene.add(this.#sky).environment = this.#pmrem.fromScene(
+            this.scene, 0, this.camera.near, this.camera.far
+        ).texture;
+
+        return sun;
     }
 
     #setEffectComposer()
@@ -101,44 +147,6 @@ export default class extends Level
 
             this.#composer.addPass(this.#fxaa);
         } */
-    }
-
-    /** @param {import("three").Mesh} chassis */
-    #setCamera(chassis)
-    {
-        chassis.add(this.camera);
-        this.#mouse = new Mouse(this.camera);
-
-        this.camera.position.set(0, 10, -35);
-        this.camera.rotation.set(0.25, Math.PI, 0);
-
-        this.#track = new Track(() =>
-        {
-            RAF.pause = false;
-        });
-    }
-
-    #createSky()
-    {
-        this.#sky.scale.setScalar(1e3);
-        const { uniforms } = this.#sky.material;
-
-        uniforms.rayleigh.value = 3;
-        uniforms.turbidity.value = 10;
-        uniforms.mieDirectionalG.value = 0.7;
-        uniforms.mieCoefficient.value = 0.005;
-
-        const sun = new Vector3().setFromSphericalCoords(
-            1, MathUtils.degToRad(90 - 2), MathUtils.degToRad(0)
-        );
-
-        uniforms.sunPosition.value.copy(sun);
-
-        this.scene.add(this.#sky).environment = this.#pmrem.fromScene(
-            this.scene, 0, this.camera.near, this.camera.far
-        ).texture;
-
-        return sun;
     }
 
     /** @param {Vector3} sun */
@@ -196,6 +204,13 @@ export default class extends Level
         this.scene.add(this.#water);
     }
 
+    #setPhysics()
+    {
+        !SAB.supported
+            ? this.#setCamera()
+            : Worker.add("Physics::Init", this.#physicsInit).post("Physics::Init");
+    }
+
     /** @override @param {number} width @param {number} height */
     #resize(width, height)
     {
@@ -233,9 +248,11 @@ export default class extends Level
         this.#water.position.z = position.z;
 
         this.#track.update(delta, speed);
-        Physics.update(deltaTime);
-        this.#composer.render();
 
+        !SAB.supported &&
+            Physics.update(deltaTime);
+
+        this.#composer.render();
         this.stats?.end();
     }
 
@@ -243,6 +260,7 @@ export default class extends Level
     dispose()
     {
         Viewport.removeResizeCallback(this.#scale);
+        Worker.post("Physics::Dispose");
         this.#composer.dispose();
         RAF.remove(this.#tick);
 
@@ -253,6 +271,8 @@ export default class extends Level
         this.#track.dispose();
         this.#mouse.dispose();
         this.#car.dispose();
+
+        Worker.dispose();
         super.dispose();
     }
 }
