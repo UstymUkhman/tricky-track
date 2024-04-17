@@ -33,35 +33,39 @@ export default class Base
 
         this.#mesh = new Mesh(
             new BoxGeometry(size.x, size.y, size.z),
-            new BaseMaterial({ opacity: +!(tile && index > 1), transparent: true, side: FrontSide, map })
+            new BaseMaterial({ opacity: +!(tile && index > 30), transparent: true, side: FrontSide, map })
         );
 
         this.#mesh.position.set(0, -0.5 - index % 2 * 5e-3, tile?.center ?? 0);
         this.#mesh.rotation.y = this.#getMeshRotation(tile?.rotation);
         this.#mesh.receiveShadow = true;
-        this.#index = index;
+        this.#index = index % 32;
 
         this.#computeCornersPosition();
         tile && this.#connectLastTile(tile);
         Emitter.dispatch("Scene::Add", this.#mesh);
 
-        if (SAB.supported)
-        {
-            SAB.transformBuffer[40 + 7 * (index % 32)] = this.#mesh.position.x;
-            SAB.transformBuffer[41 + 7 * (index % 32)] = this.#mesh.position.y;
-            SAB.transformBuffer[42 + 7 * (index % 32)] = this.#mesh.position.z;
+        if (!SAB.supported) Physics.addKinematicBox(this.#mesh, this.#index);
 
-            SAB.transformBuffer[43 + 7 * (index % 32)] = this.#mesh.quaternion.x;
-            SAB.transformBuffer[44 + 7 * (index % 32)] = this.#mesh.quaternion.y;
-            SAB.transformBuffer[45 + 7 * (index % 32)] = this.#mesh.quaternion.z;
-            SAB.transformBuffer[46 + 7 * (index % 32)] = this.#mesh.quaternion.w;
+        else
+        {
+            SAB.transformBuffer[40 + 7 * this.#index] = this.#mesh.position.x;
+            SAB.transformBuffer[41 + 7 * this.#index] = this.#mesh.position.y;
+            SAB.transformBuffer[42 + 7 * this.#index] = this.#mesh.position.z;
+
+            SAB.transformBuffer[43 + 7 * this.#index] = this.#mesh.quaternion.x;
+            SAB.transformBuffer[44 + 7 * this.#index] = this.#mesh.quaternion.y;
+            SAB.transformBuffer[45 + 7 * this.#index] = this.#mesh.quaternion.z;
+            SAB.transformBuffer[46 + 7 * this.#index] = this.#mesh.quaternion.w;
 
             Worker.post("Physics::Add::KinematicBox",
             {
-                width: size.x, height: size.y, depth: size.z, index
+                index: this.#index,
+                width: size.x,
+                height: size.y,
+                depth: size.z
             });
         }
-        else Physics.addKinematicBox(this.#mesh);
     }
 
     /** @param {Base | undefined} tile */
@@ -120,21 +124,19 @@ export default class Base
     }
 
     /** @param {number} delta @param {number} speed */
-    move(delta, speed)
+    move(delta /*, speed */)
     {
-        speed *= 1e-3; // 5e-4
         let { opacity } = this.#mesh.material;
-
-        opacity = Math.max(opacity - speed - 64e-4, 0);
-        this.#mesh.position.y -= delta * (speed + 4e-4);
+        opacity = Math.max(opacity - delta, 0);
 
         this.#mesh.material.opacity = opacity;
+        this.#mesh.position.y -= delta;
 
         SAB.supported
-            ? SAB.transformBuffer[41 + 7 * (this.#index % 32)] = this.#mesh.position.y
-            : Physics.moveKinematicBody(this.#mesh);
+            ? SAB.transformBuffer[41 + 7 * this.#index] = this.#mesh.position.y
+            : Physics.moveKinematicBody(this.#mesh.position, this.#index);
 
-        if (this.#mesh.position.y <= -2.5)
+        if (this.#mesh.position.y <= -1.5)
         {
             this.#dispose();
             return true;
@@ -144,12 +146,10 @@ export default class Base
     }
 
     /** @param {number} delta @param {number} speed */
-    fade(delta, speed)
+    fade(delta /*, speed */)
     {
-        const opacityFactor = ++speed * 1e-3; // 5e-4
         let { opacity } = this.#mesh.material;
-
-        opacity = Math.min(opacity + delta * opacityFactor, 1);
+        opacity = Math.min(opacity + delta, 1);
 
         this.#mesh.material.opacity = opacity;
         return opacity === 1;
@@ -186,7 +186,7 @@ export default class Base
         Emitter.dispatch("Scene::Remove", this.#mesh);
 
         !SAB.supported
-            ? Physics.removeKinematicBody(this.#mesh)
+            ? Physics.removeKinematicBody(this.#index)
             : Worker.post("Physics::Remove::KinematicBody", { index: this.#index });
     }
 }

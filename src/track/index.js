@@ -5,7 +5,7 @@ import Base from "./Base";
 export default class Track
 {
     /** @type {Base[]} */ #tiles = [];
-    #tileIndex = 0; #nextTile = 1; #ready = false;
+    #tileIndex = 0; #nextTile = 30; #ready = false;
     /** @type {import("three").Texture} */ #asphalt;
 
     /** @param {() => void} onLoad */
@@ -13,8 +13,10 @@ export default class Track
     {
         this.#createAsphalt().then(() =>
         {
-            this.#tiles.push(new Base(this.#asphalt.clone(), undefined, this.#tileIndex++));
-            this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex++));
+            for ( ; this.#tileIndex < 31; this.#tileIndex++)
+            {
+                this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex));
+            }
 
             setTimeout(() => this.#ready = true, 3e3) && onLoad();
         });
@@ -27,18 +29,17 @@ export default class Track
     }
 
     /** @param {number} delta @param {number} speed */
-    update(delta, speed)
+    update(delta /*, speed */)
     {
         if (!this.#ready) return;
-        speed = speed * 1e-2 | 0;
 
-        if (this.#tiles[0].move(delta, speed))
+        if (this.#tiles[0].move(delta /*, speed */))
         {
             this.#tiles.splice(0, 1);
             this.#nextTile--;
         }
 
-        if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta, speed))
+        if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta /*, speed */))
         {
             this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex++));
             this.#nextTile++;

@@ -226,8 +226,7 @@ export default class extends Level
         }
     }
 
-    /** @param {number} delta */
-    #update(delta)
+    #update()
     {
         this.stats?.begin();
 
@@ -244,10 +243,10 @@ export default class extends Level
         this.#sky.position.set(position.x, 0, position.z);
         this.#mouse.update(position, rotation, direction);
 
+        this.#track.update(deltaTime * 0.5, speed);
+
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
-
-        this.#track.update(delta, speed);
 
         !SAB.supported &&
             Physics.update(deltaTime);
@@ -259,8 +258,11 @@ export default class extends Level
     /** @override */
     dispose()
     {
+        !SAB.supported
+            ? Physics.dispose()
+            : Worker.post("Physics::Dispose").dispose();
+
         Viewport.removeResizeCallback(this.#scale);
-        Worker.post("Physics::Dispose");
         this.#composer.dispose();
         RAF.remove(this.#tick);
 
@@ -271,8 +273,6 @@ export default class extends Level
         this.#track.dispose();
         this.#mouse.dispose();
         this.#car.dispose();
-
-        Worker.dispose();
         super.dispose();
     }
 }

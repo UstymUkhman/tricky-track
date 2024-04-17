@@ -69,14 +69,13 @@ export default class extends Level
 
     #initPhysics()
     {
-        const { uuid, position, quaternion, rotation } = this.#createGround();
+        const { position, quaternion, rotation } = this.#createGround();
 
         Worker.post("Physics::Add::StaticPlane",
         {
             quaternion: quaternion.toJSON(),
             rotation: rotation.x,
-            position,
-            uuid
+            position
         });
 
         this.#car = new Car(() =>
@@ -161,6 +160,10 @@ export default class extends Level
     /** @override */
     dispose()
     {
+        !SAB.supported
+            ? Physics.dispose()
+            : Worker.post("Physics::Dispose").dispose();
+
         this.#controls.dispose();
         RAF.remove(this.#tick);
         this.#car.dispose();
