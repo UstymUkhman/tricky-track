@@ -77,7 +77,6 @@ Worker.onmessage = message =>
             Worker.postMessage({
                 name: event,
                 response: physics.addWheel(
-                    params.chassis,
                     params.tuning,
                     params.config,
                     params.radius,

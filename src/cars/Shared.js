@@ -61,7 +61,6 @@ export default class Car
 
             Worker.post("Physics::Add::Wheel",
             {
-                chassis: this.#chassis.uuid,
                 tuning: this.#tuning,
                 config: this.#config,
                 radius: height / 2,
@@ -106,9 +105,8 @@ export default class Car
         {
             tuning: this.#tuning,
             chassis: {
-                mass: this.#config.mass,
                 width, height, depth,
-                uuid: chassis.uuid,
+                mass: this.#config.mass
             }
         });
     }
@@ -194,7 +192,6 @@ export default class Car
         Worker.post("Physics::Reset::Vehicle",
         {
             quaternion: rotation.toJSON(),
-            uuid: this.#chassis.uuid,
             position
         });
     }

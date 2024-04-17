@@ -16,6 +16,7 @@ import {
 
 export default class Physics
 {
+    #vehicle;
     #Engine = Ammo;
 
     #friction = RIGID_FRICTION;
@@ -36,11 +37,7 @@ export default class Physics
         this.#dispatcher, this.#broadphase, this.#solver, this.#collision
     );
 
-    /** @type {Map<string, object>} */ #kinematicBodies = new Map();
-    /** @type {Map<string, object>} */ #staticBodies = new Map();
-
-    /** @type {{ mesh: import("three").Mesh, body: object }[]} */
-    #dynamicBodies = [];
+    /** @type {object[]} */ #kinematicBodies = new Array(32);
 
     constructor()
     {
@@ -89,156 +86,81 @@ export default class Physics
         return body;
     }
 
-    /** @param {import("three").Mesh} mesh @param {object} shape */
-    #addStaticBody(mesh, shape)
-    {
-        const body = this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone());
-        this.#staticBodies.set(mesh.uuid, body);
-        this.#world.addRigidBody(body);
-    }
-
     /** @param {import("three").Mesh} mesh */
     addStaticPlane(mesh)
     {
-        this.#addStaticBody(mesh, new this.#Engine.btStaticPlaneShape(
+        this.#world.addRigidBody(this.#createRigidBody(new this.#Engine.btStaticPlaneShape(
             new this.#Engine.btVector3(0, 0, mesh.rotation.x / -TAU), 0
-        ));
+        ), mesh.position.clone(), mesh.quaternion.clone()));
     }
 
-    /** @param {import("three").Mesh} mesh */
-    addStaticBox(mesh)
+    /** @param {import("three").Mesh} mesh @param {number} index */
+    addKinematicBox(mesh, index)
     {
         const { width, height, depth } = mesh.geometry.parameters;
 
-        this.#addStaticBody(mesh, new this.#Engine.btBoxShape(
+        const body = this.#createRigidBody(new this.#Engine.btBoxShape(
             new this.#Engine.btVector3(width * 0.5, height * 0.5, depth * 0.5)
-        ));
-    }
+        ), mesh.position.clone(), mesh.quaternion.clone());
 
-    /** @param {import("three").Mesh} mesh */
-    removeStaticBody(mesh)
-    {
-        const body = this.#staticBodies.get(mesh.uuid);
-        if (!body) return;
-        body.forceActivationState(DISABLE_SIMULATION);
-
-        this.#Engine.destroy(body);
-        this.#world.removeRigidBody(body);
-        this.#staticBodies.delete(mesh.uuid);
-    }
-
-    /** @param {import("three").Mesh} mesh @param {object} shape */
-    #addKinematicBody(mesh, shape)
-    {
-        const body = this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone());
         body.setCollisionFlags(body.getCollisionFlags() | KINEMATIC_COLLISION);
-        this.#kinematicBodies.set(mesh.uuid, body);
+        this.#kinematicBodies[index] = body;
         this.#world.addRigidBody(body);
     }
 
-    /** @param {import("three").Mesh} mesh */
-    addKinematicBox(mesh)
+    /** @param {import("three").Vector3} position @param {number} index */
+    moveKinematicBody(position, index)
     {
-        const { width, height, depth } = mesh.geometry.parameters;
-
-        this.#addKinematicBody(mesh, new this.#Engine.btBoxShape(
-            new this.#Engine.btVector3(width * 0.5, height * 0.5, depth * 0.5)
-        ));
-    }
-
-    /** @param {import("three").Mesh} mesh */
-    moveKinematicBody(mesh)
-    {
-        const body = this.#kinematicBodies.get(mesh.uuid);
+        const body = this.#kinematicBodies[index];
         if (!body) return;
 
         const motionState = body.getMotionState();
-        this.#transform.getOrigin().setValue(...mesh.position);
-        motionState && motionState.setWorldTransform(this.#transform);
+        motionState.getWorldTransform(this.#transform);
+        this.#transform.getOrigin().setValue(...position);
+        motionState.setWorldTransform(this.#transform);
     }
 
-    /** @param {import("three").Mesh} mesh */
-    removeKinematicBody(mesh)
+    /** @param {number} index */
+    removeKinematicBody(index)
     {
-        const body = this.#kinematicBodies.get(mesh.uuid);
+        const body = this.#kinematicBodies[index];
         if (!body) return;
-        body.forceActivationState(DISABLE_SIMULATION);
 
+        body.forceActivationState(DISABLE_SIMULATION);
         this.#Engine.destroy(body);
         this.#world.removeRigidBody(body);
-        this.#kinematicBodies.delete(mesh.uuid);
-    }
-
-    /** @param {import("three").Mesh} mesh @param {object} shape @param {number} mass */
-    #addDynamicBody(mesh, shape, mass = 0)
-    {
-        const body = this.#createRigidBody(shape, mesh.position.clone(), mesh.quaternion.clone(), mass);
-        this.#dynamicBodies.push({ mesh, body });
-        this.#world.addRigidBody(body);
-    }
-
-    /** @param {import("three").Mesh} mesh @param {number} mass */
-    addDynamicBox(mesh, mass = 0)
-    {
-        const { width, height, depth } = mesh.geometry.parameters;
-
-        this.#addDynamicBody(mesh, new this.#Engine.btBoxShape(
-            new this.#Engine.btVector3(width * 0.5, height * 0.5, depth * 0.5)
-        ), mass);
-    }
-
-    /** @param {import("three").Mesh} mesh */
-    teleportDynamicBody(mesh)
-    {
-        const index = this.#dynamicBodies.findIndex(({ mesh: { uuid }}) => mesh.uuid === uuid);
-        if (index === -1) return;
-        const { position, quaternion } = mesh;
-
-        this.#transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-        this.#transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-        this.#dynamicBodies[index].body.setWorldTransform(this.#transform);
-    }
-
-    /** @param {import("three").Mesh} mesh */
-    removeDynamicBody(mesh)
-    {
-        const index = this.#dynamicBodies.findIndex(({ mesh: { uuid } }) => mesh.uuid === uuid);
-
-        if (index === -1) return;
-        const { body } = this.#dynamicBodies[index];
-        body.forceActivationState(DISABLE_SIMULATION);
-
-        this.#Engine.destroy(body);
-        this.#world.removeRigidBody(body);
-        this.#dynamicBodies.splice(index, 1);
     }
 
     /** @param {import("three").Mesh} chassis @param {object} tuning @param {number} mass @returns {object} vehicle */
     addVehicle(chassis, tuning, mass)
     {
-        this.addDynamicBox(chassis, mass);
-        const { body } = this.#dynamicBodies.at(-1);
+        const { width, height, depth } = chassis.geometry.parameters;
 
+        const shape = new this.#Engine.btBoxShape(new this.#Engine.btVector3(
+            width * 0.5, height * 0.5, depth * 0.5
+        ));
+
+        const body = this.#createRigidBody(shape, chassis.position.clone(), chassis.quaternion.clone(), mass);
         const raycaster = new this.#Engine.btDefaultVehicleRaycaster(this.#world);
-        const vehicle = new this.#Engine.btRaycastVehicle(tuning, body, raycaster);
+        this.#vehicle = new this.#Engine.btRaycastVehicle(tuning, body, raycaster);
 
-        vehicle.setCoordinateSystem(0, 1, 2);
-        this.#world.addAction(vehicle);
+        this.#vehicle.setCoordinateSystem(0, 1, 2);
+        this.#world.addAction(this.#vehicle);
+        this.#world.addRigidBody(body);
 
-        return vehicle;
+        return this.#vehicle;
     }
 
     /**
-     * @param {object} vehicle
      * @param {object} tuning
      * @param {object} config
      * @param {import("three").Vector3} position
      * @param {number} radius
      * @param {number} index
      */
-    addWheel(vehicle, tuning, config, position, radius, index)
+    addWheel(tuning, config, position, radius, index)
     {
-        const wheel = vehicle.addWheel(
+        const wheel = this.#vehicle.addWheel(
             new this.#Engine.btVector3(...position),
             this.#down,
             this.#left,
@@ -257,31 +179,22 @@ export default class Physics
         wheel.set_m_frictionSlip(config.frictionSlip);
     }
 
+    /** @param {import("three").Mesh} chassis */
+    resetVehicle(chassis)
+    {
+        const transform = this.#vehicle.getChassisWorldTransform();
+        transform.setOrigin(new this.#Engine.btVector3(...chassis.position));
+        transform.setRotation(new this.#Engine.btQuaternion(...chassis.quaternion));
+
+        this.#vehicle.getRigidBody().setWorldTransform(transform);
+    }
+
     /** @param {number} delta */
     update(delta)
     {
-        for (let b = this.#dynamicBodies.length; b--; )
-        {
-            const { body, mesh } = this.#dynamicBodies[b];
-            body.getMotionState().getWorldTransform(this.#transform);
-
-            const origin = this.#transform.getOrigin();
-            const rotation = this.#transform.getRotation();
-            const x = origin.x(), y = origin.y(), z = origin.z();
-
-            mesh.userData.x = x;
-            mesh.userData.y = y;
-            mesh.userData.z = z;
-
-            mesh.position.set(x, y, z);
-            mesh.userData.position?.set(x, y, z);
-            mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-        }
-
         this.#world.stepSimulation(delta, 10);
     }
 
-    /** @returns {object} */
     get vehicleTuning()
     {
         return new this.#Engine.btVehicleTuning();
@@ -289,9 +202,7 @@ export default class Physics
 
     dispose()
     {
-        this.#kinematicBodies.clear();
-        this.#dynamicBodies.splice(0);
-        this.#staticBodies.clear();
+        this.#kinematicBodies.splice(0);
         this.#world.__destroy__();
     }
 }

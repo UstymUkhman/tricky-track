@@ -28,16 +28,15 @@ export default class Physics
     #solver;
     #dispatcher;
 
+    #vehicle;
+
     #friction = RIGID_FRICTION;
     #restitution = RIGID_RESTITUTION;
     #linearDamping = RIGID_LINEAR_DAMPING;
     #angularDamping = RIGID_ANGULAR_DAMPING;
-    /** @type {Float64Array} */ #sharedTransformBuffer;
 
+    /** @type {Float64Array} */ #sharedTransformBuffer;
     /** @type {object[]} */ #kinematicBodies = new Array(32);
-    /** @type {Map<string, object>} */ #vehicles = new Map();
-    /** @type {Map<string, object>} */ #staticBodies = new Map();
-    /** @type {Map<string, object>} */ #dynamicBodies = new Map();
 
     /** @param {(Ammo: object) => void | undefined} onLoad */
     constructor(onLoad)
@@ -112,29 +111,17 @@ export default class Physics
 
     /**
      * @typedef {object} BodyParams
-     * @property {string} uuid
      * @property {import("three").Vector3} position
      * @property {number[]} quaternion
-     * @param {BodyParams} params
-     * @param {object} shape
-     */
-    #addStaticBody(params, shape)
-    {
-        const body = this.#createRigidBody(shape, params.position, params.quaternion);
-        this.#staticBodies.set(params.uuid, body);
-        this.#world.addRigidBody(body);
-    }
-
-    /**
      * @typedef {object} PlaneParams
      * @property {number} rotation
      * @param {BodyParams & PlaneParams} params
      */
     addStaticPlane(params)
     {
-        this.#addStaticBody(params, new this.#Engine.btStaticPlaneShape(
+        this.#world.addRigidBody(this.#createRigidBody(new this.#Engine.btStaticPlaneShape(
             new this.#Engine.btVector3(0, 0, params.rotation / -TAU), 0
-        ));
+        ), params.position, params.quaternion));
     }
 
     /**
@@ -142,122 +129,58 @@ export default class Physics
      * @property {number} width
      * @property {number} height
      * @property {number} depth
-     * @param {BodyParams & BoxParams} params
+     * @param {KinematicParams & BoxParams} params
      */
-    addStaticBox(params)
-    {
-        this.#addStaticBody(params, new this.#Engine.btBoxShape(
-            new this.#Engine.btVector3(params.width * 0.5, params.height * 0.5, params.depth * 0.5)
-        ));
-    }
-
-    /** @param {{ uuid: string }} */
-    removeStaticBody({ uuid })
-    {
-        const body = this.#staticBodies.get(uuid);
-        if (!body) return;
-        body.forceActivationState(DISABLE_SIMULATION);
-
-        this.#Engine.destroy(body);
-        this.#world.removeRigidBody(body);
-        this.#staticBodies.delete(uuid);
-    }
-
-    /**
-     * @typedef {object} KinematicParams
-     * @property {number} index
-     * @param {KinematicParams} params
-     * @param {object} shape
-     */
-    #addKinematicBody(params, shape)
+    addKinematicBox(params)
     {
         const position =
         {
-            x: this.#sharedTransformBuffer[40 + 7 * (params.index % 32)],
-            y: this.#sharedTransformBuffer[41 + 7 * (params.index % 32)],
-            z: this.#sharedTransformBuffer[42 + 7 * (params.index % 32)]
+            x: this.#sharedTransformBuffer[40 + 7 * params.index],
+            y: this.#sharedTransformBuffer[41 + 7 * params.index],
+            z: this.#sharedTransformBuffer[42 + 7 * params.index]
         };
 
         const quaternion =
         [
-            this.#sharedTransformBuffer[43 + 7 * (params.index % 32)],
-            this.#sharedTransformBuffer[44 + 7 * (params.index % 32)],
-            this.#sharedTransformBuffer[45 + 7 * (params.index % 32)],
-            this.#sharedTransformBuffer[46 + 7 * (params.index % 32)]
+            this.#sharedTransformBuffer[43 + 7 * params.index],
+            this.#sharedTransformBuffer[44 + 7 * params.index],
+            this.#sharedTransformBuffer[45 + 7 * params.index],
+            this.#sharedTransformBuffer[46 + 7 * params.index]
         ];
 
-        const body = this.#createRigidBody(shape, position, quaternion);
-        body.setCollisionFlags(body.getCollisionFlags() | KINEMATIC_COLLISION);
-
-        this.#kinematicBodies[params.index % 32] = body;
-        this.#world.addRigidBody(body);
-    }
-
-    /** @param {KinematicParams & BoxParams} params */
-    addKinematicBox(params)
-    {
-        this.#addKinematicBody(params, new this.#Engine.btBoxShape(
+        const body = this.#createRigidBody(new this.#Engine.btBoxShape(
             new this.#Engine.btVector3(params.width * 0.5, params.height * 0.5, params.depth * 0.5)
-        ));
+        ), position, quaternion);
+
+        body.setCollisionFlags(body.getCollisionFlags() | KINEMATIC_COLLISION);
+        this.#kinematicBodies[params.index] = body;
+        this.#world.addRigidBody(body);
     }
 
     /** @param {KinematicParams} params */
     removeKinematicBody(params)
     {
-        const body = this.#kinematicBodies[params.index % 32];
+        const body = this.#kinematicBodies[params.index];
         if (!body) return;
         body.forceActivationState(DISABLE_SIMULATION);
 
-        this.#sharedTransformBuffer[40 + 7 * (params.index % 32)] = 0;
-        this.#sharedTransformBuffer[41 + 7 * (params.index % 32)] = 0;
-        this.#sharedTransformBuffer[42 + 7 * (params.index % 32)] = 0;
+        this.#sharedTransformBuffer[40 + 7 * params.index] = 0;
+        this.#sharedTransformBuffer[41 + 7 * params.index] = 0;
+        this.#sharedTransformBuffer[42 + 7 * params.index] = 0;
 
-        this.#sharedTransformBuffer[43 + 7 * (params.index % 32)] = 0;
-        this.#sharedTransformBuffer[44 + 7 * (params.index % 32)] = 0;
-        this.#sharedTransformBuffer[45 + 7 * (params.index % 32)] = 0;
-        this.#sharedTransformBuffer[46 + 7 * (params.index % 32)] = 1;
-
-        this.#Engine.destroy(body);
-        this.#world.removeRigidBody(body);
-        this.#kinematicBodies[params.index % 32] = undefined;
-    }
-
-    /** @param {BodyParams & DynamicParams} params @param {object} shape */
-    #addDynamicBody(params, shape)
-    {
-        const body = this.#createRigidBody(shape, params.position, params.quaternion, params.mass);
-        this.#dynamicBodies.set(params.uuid, body);
-        this.#world.addRigidBody(body);
-    }
-
-    /**
-     * @typedef {object} DynamicParams
-     * @property {number} mass
-     * @param {BodyParams & BoxParams & DynamicParams} params
-     */
-    addDynamicBox(params)
-    {
-        this.#addDynamicBody(params, new this.#Engine.btBoxShape(
-            new this.#Engine.btVector3(params.width * 0.5, params.height * 0.5, params.depth * 0.5)
-        ));
-    }
-
-    /** @param {{ uuid: string }} */
-    removeDynamicBody(uuid)
-    {
-        const body = this.#dynamicBodies.get(uuid);
-        if (!body) return;
-        body.forceActivationState(DISABLE_SIMULATION);
+        this.#sharedTransformBuffer[43 + 7 * params.index] = 0;
+        this.#sharedTransformBuffer[44 + 7 * params.index] = 0;
+        this.#sharedTransformBuffer[45 + 7 * params.index] = 0;
+        this.#sharedTransformBuffer[46 + 7 * params.index] = 1;
 
         this.#Engine.destroy(body);
         this.#world.removeRigidBody(body);
-        this.#dynamicBodies.delete(uuid);
     }
 
     /**
      * @typedef {object} ChassisParams
-     * @property {string} uuid
-     * @param {BoxParams & DynamicParams & ChassisParams} chassis
+     * @property {number} mass
+     * @param {BoxParams & ChassisParams} chassis
      * @param {object} tuning
      */
     addVehicle(chassis, tuning)
@@ -283,29 +206,24 @@ export default class Physics
 
         const body = this.#createRigidBody(shape, position, quaternion, chassis.mass);
         const raycaster = new this.#Engine.btDefaultVehicleRaycaster(this.#world);
-        const vehicle = new this.#Engine.btRaycastVehicle(tuning, body, raycaster);
+        this.#vehicle = new this.#Engine.btRaycastVehicle(tuning, body, raycaster);
 
-        this.#vehicles.set(chassis.uuid, vehicle);
-        vehicle.setCoordinateSystem(0, 1, 2);
-
+        this.#vehicle.setCoordinateSystem(0, 1, 2);
+        this.#world.addAction(this.#vehicle);
         this.#world.addRigidBody(body);
-        this.#world.addAction(vehicle);
 
-        return vehicle;
+        return this.#vehicle;
     }
 
     /**
-     * @param {string} chassis
      * @param {object} tuning
      * @param {object} config
      * @param {number} radius
      * @param {number} index
      */
-    addWheel(chassis, tuning, config, radius, index)
+    addWheel(tuning, config, radius, index)
     {
-        const vehicle = this.#vehicles.get(chassis);
-
-        if (!vehicle) return;
+        if (!this.#vehicle) return;
 
         const i = index * 7 + 7;
 
@@ -315,7 +233,7 @@ export default class Physics
             this.#sharedTransformBuffer[i + 2]
         );
 
-        const wheel = vehicle.addWheel(
+        const wheel = this.#vehicle.addWheel(
             position,
             this.#down,
             this.#left,
@@ -337,21 +255,20 @@ export default class Physics
     /** @param {BodyParams} params */
     resetVehicle(params)
     {
-        const { uuid, position, quaternion } = params;
-        const vehicle = this.#vehicles.get(uuid);
+        const { position, quaternion } = params;
 
-        if (!vehicle) return;
+        if (!this.#vehicle) return;
 
-        vehicle.setBrake(Infinity, 0);
-        vehicle.setBrake(Infinity, 1);
-        vehicle.setBrake(Infinity, 2);
-        vehicle.setBrake(Infinity, 3);
+        this.#vehicle.setBrake(Infinity, 0);
+        this.#vehicle.setBrake(Infinity, 1);
+        this.#vehicle.setBrake(Infinity, 2);
+        this.#vehicle.setBrake(Infinity, 3);
 
-        vehicle.setSteeringValue(0, 0);
-        vehicle.setSteeringValue(0, 1);
+        this.#vehicle.setSteeringValue(0, 0);
+        this.#vehicle.setSteeringValue(0, 1);
 
-        vehicle.applyEngineForce(0, 2);
-        vehicle.applyEngineForce(0, 3);
+        this.#vehicle.applyEngineForce(0, 2);
+        this.#vehicle.applyEngineForce(0, 3);
 
         this.#sharedTransformBuffer[0] = position.x;
         this.#sharedTransformBuffer[1] = position.y;
@@ -362,64 +279,63 @@ export default class Physics
         this.#sharedTransformBuffer[5] = quaternion[2];
         this.#sharedTransformBuffer[6] = quaternion[3];
 
-        const transform = vehicle.getChassisWorldTransform();
+        const transform = this.#vehicle.getChassisWorldTransform();
         transform.setRotation(new this.#Engine.btQuaternion(...quaternion));
         transform.setOrigin(new this.#Engine.btVector3(position.x, position.y, position.z));
+
+        this.#vehicle.getRigidBody().setWorldTransform(transform);
     }
 
-    #updateVehicles()
+    #updateVehicle()
     {
-        this.#vehicles.forEach(vehicle =>
+        const wheels = this.#vehicle.getNumWheels();
+        let transform, origin, rotation, i = wheels * 7 + 7;
+
+        this.#vehicle.setBrake(this.#sharedTransformBuffer[i + 2], 0);
+        this.#vehicle.setBrake(this.#sharedTransformBuffer[i + 2], 1);
+        this.#vehicle.setBrake(this.#sharedTransformBuffer[i + 3], 2);
+        this.#vehicle.setBrake(this.#sharedTransformBuffer[i + 3], 3);
+
+        this.#vehicle.setSteeringValue(this.#sharedTransformBuffer[i + 1], 0);
+        this.#vehicle.setSteeringValue(this.#sharedTransformBuffer[i + 1], 1);
+
+        this.#vehicle.applyEngineForce(this.#sharedTransformBuffer[i + 0], 2);
+        this.#vehicle.applyEngineForce(this.#sharedTransformBuffer[i + 0], 3);
+
+        this.#sharedTransformBuffer[i + 4] = this.#vehicle.getCurrentSpeedKmHour();
+
+        for (let w = 0; w < wheels; w++)
         {
-            const wheels = vehicle.getNumWheels();
-            let i = wheels * 7 + 7;
+            i = w * 7 + 7;
+            this.#vehicle.updateWheelTransform(w, true);
+            transform = this.#vehicle.getWheelTransformWS(w);
 
-            vehicle.setBrake(this.#sharedTransformBuffer[i + 2], 0);
-            vehicle.setBrake(this.#sharedTransformBuffer[i + 2], 1);
-            vehicle.setBrake(this.#sharedTransformBuffer[i + 3], 2);
-            vehicle.setBrake(this.#sharedTransformBuffer[i + 3], 3);
+            origin = transform.getOrigin();
+            rotation = transform.getRotation();
 
-            vehicle.setSteeringValue(this.#sharedTransformBuffer[i + 1], 0);
-            vehicle.setSteeringValue(this.#sharedTransformBuffer[i + 1], 1);
+            this.#sharedTransformBuffer[i + 0] = origin.x();
+            this.#sharedTransformBuffer[i + 1] = origin.y();
+            this.#sharedTransformBuffer[i + 2] = origin.z();
 
-            vehicle.applyEngineForce(this.#sharedTransformBuffer[i + 0], 2);
-            vehicle.applyEngineForce(this.#sharedTransformBuffer[i + 0], 3);
+            this.#sharedTransformBuffer[i + 3] = rotation.x();
+            this.#sharedTransformBuffer[i + 4] = rotation.y();
+            this.#sharedTransformBuffer[i + 5] = rotation.z();
+            this.#sharedTransformBuffer[i + 6] = rotation.w();
+        }
 
-            this.#sharedTransformBuffer[i + 4] = vehicle.getCurrentSpeedKmHour();
+        transform = this.#vehicle.getChassisWorldTransform();
 
-            for (let w = 0; w < wheels; w++)
-            {
-                i = w * 7 + 7;
-                vehicle.updateWheelTransform(w, true);
-                const transform = vehicle.getWheelTransformWS(w);
+        origin = transform.getOrigin();
+        rotation = transform.getRotation();
 
-                const origin = transform.getOrigin();
-                const rotation = transform.getRotation();
+        this.#sharedTransformBuffer[0] = origin.x();
+        this.#sharedTransformBuffer[1] = origin.y();
+        this.#sharedTransformBuffer[2] = origin.z();
 
-                this.#sharedTransformBuffer[i + 0] = origin.x();
-                this.#sharedTransformBuffer[i + 1] = origin.y();
-                this.#sharedTransformBuffer[i + 2] = origin.z();
-
-                this.#sharedTransformBuffer[i + 3] = rotation.x();
-                this.#sharedTransformBuffer[i + 4] = rotation.y();
-                this.#sharedTransformBuffer[i + 5] = rotation.z();
-                this.#sharedTransformBuffer[i + 6] = rotation.w();
-            }
-
-            const transform = vehicle.getChassisWorldTransform();
-
-            const origin = transform.getOrigin();
-            const rotation = transform.getRotation();
-
-            this.#sharedTransformBuffer[0] = origin.x();
-            this.#sharedTransformBuffer[1] = origin.y();
-            this.#sharedTransformBuffer[2] = origin.z();
-
-            this.#sharedTransformBuffer[3] = rotation.x();
-            this.#sharedTransformBuffer[4] = rotation.y();
-            this.#sharedTransformBuffer[5] = rotation.z();
-            this.#sharedTransformBuffer[6] = rotation.w();
-        });
+        this.#sharedTransformBuffer[3] = rotation.x();
+        this.#sharedTransformBuffer[4] = rotation.y();
+        this.#sharedTransformBuffer[5] = rotation.z();
+        this.#sharedTransformBuffer[6] = rotation.w();
     }
 
     #updateKinematicBodies()
@@ -427,35 +343,34 @@ export default class Physics
         for (let b = 0; b < 32; b++)
         {
             const body = this.#kinematicBodies[b];
-            if (!body) continue;
 
-            const motionState = body.getMotionState();
-            motionState.getWorldTransform(this.#transform);
+            if (body)
+            {
+                const motionState = body.getMotionState();
+                motionState.getWorldTransform(this.#transform);
 
-            const origin = this.#transform.getOrigin();
-            // const rotation = this.#transform.getRotation();
+                this.#transform.getOrigin().setValue(
+                    this.#sharedTransformBuffer[40 + 7 * b],
+                    this.#sharedTransformBuffer[41 + 7 * b],
+                    this.#sharedTransformBuffer[42 + 7 * b]
+                );
 
-            origin.setValue(
-                this.#sharedTransformBuffer[40 + 7 * (b % 32)],
-                this.#sharedTransformBuffer[41 + 7 * (b % 32)],
-                this.#sharedTransformBuffer[42 + 7 * (b % 32)]
-            );
+                /* this.#transform.getRotation().setValue(
+                    this.#sharedTransformBuffer[43 + 7 * b],
+                    this.#sharedTransformBuffer[44 + 7 * b],
+                    this.#sharedTransformBuffer[45 + 7 * b],
+                    this.#sharedTransformBuffer[46 + 7 * b]
+                ); */
 
-            /* rotation.setValue(
-                this.#sharedTransformBuffer[43 + 7 * (b % 32)],
-                this.#sharedTransformBuffer[44 + 7 * (b % 32)],
-                this.#sharedTransformBuffer[45 + 7 * (b % 32)],
-                this.#sharedTransformBuffer[46 + 7 * (b % 32)]
-            ); */
-
-            motionState?.setWorldTransform(this.#transform);
+                motionState.setWorldTransform(this.#transform);
+            }
         }
     }
 
     /** @param {number} delta */
     update(delta)
     {
-        this.#updateVehicles();
+        this.#updateVehicle();
         this.#updateKinematicBodies();
         this.#world.stepSimulation(delta, 10);
     }
@@ -468,8 +383,6 @@ export default class Physics
     dispose()
     {
         this.#kinematicBodies.splice(0);
-        this.#dynamicBodies.clear();
-        this.#staticBodies.clear();
         this.#world.__destroy__();
     }
 }

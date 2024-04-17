@@ -41,7 +41,7 @@ export default class Car
         for (let w = 0, l = wheels.length; w < l; this.#wheels.push(wheels[w++]))
         {
             const { position, geometry: { parameters: { height } } } = wheels[w];
-            Physics.addWheel(this.#vehicle, this.#tuning, this.#config, position, height * 0.5, w);
+            Physics.addWheel(this.#tuning, this.#config, position, height * 0.5, w);
         }
 
         this.#onLoad(this.#chassis.children[0]);
@@ -50,6 +50,7 @@ export default class Car
     /** @param {boolean} accelerate @param {number} steer @param {boolean} brake */
     update(accelerate, steer, brake)
     {
+        let transform, origin, rotation;
         const speed = this.speed;
         let acceleration = 0;
         let braking = 0;
@@ -86,38 +87,50 @@ export default class Car
         this.#vehicle.applyEngineForce(acceleration, 2);
         this.#vehicle.applyEngineForce(acceleration, 3);
 
-        this.#bbox.copy(this.#chassis.geometry.boundingBox)
-            .applyMatrix4(this.#chassis.matrixWorld);
-
         for (let w = 0, l = this.#wheels.length; w < l; w++)
         {
             this.#vehicle.updateWheelTransform(w, true);
-            const transform = this.#vehicle.getWheelTransformWS(w);
+            transform = this.#vehicle.getWheelTransformWS(w);
 
-            const origin = transform.getOrigin();
-            const rotation = transform.getRotation();
+            origin = transform.getOrigin();
+            rotation = transform.getRotation();
 
             this.#wheels[w].position.set(origin.x(), origin.y(), origin.z());
             this.#wheels[w].quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
         }
+
+        transform = this.#vehicle.getChassisWorldTransform();
+
+        origin = transform.getOrigin();
+        rotation = transform.getRotation();
+        const x = origin.x(), y = origin.y(), z = origin.z();
+
+        this.#chassis.userData.position.set(x, y, z);
+
+        this.#chassis.position.copy(this.#chassis.userData.position);
+        this.#chassis.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+
+        this.#bbox.copy(this.#chassis.geometry.boundingBox).applyMatrix4(this.#chassis.matrixWorld);
     }
 
     /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotation */
     reset(position, rotation)
     {
-        this.#vehicle.applyEngineForce(0, 2);
-        this.#vehicle.applyEngineForce(0, 3);
-
         this.#vehicle.setBrake(Infinity, 0);
         this.#vehicle.setBrake(Infinity, 1);
-
         this.#vehicle.setBrake(Infinity, 2);
         this.#vehicle.setBrake(Infinity, 3);
+
+        this.#vehicle.setSteeringValue(0, 0);
+        this.#vehicle.setSteeringValue(0, 1);
+
+        this.#vehicle.applyEngineForce(0, 2);
+        this.#vehicle.applyEngineForce(0, 3);
 
         this.#chassis.position.copy(position);
         this.#chassis.quaternion.copy(rotation);
 
-        Physics.teleportDynamicBody(this.#chassis);
+        Physics.resetVehicle(this.#chassis);
         Emitter.dispatch("Car::Reset", this.rotation);
 
         this.#bbox.copy(this.#chassis.geometry.boundingBox)
