@@ -28,18 +28,20 @@ export default class Track
         this.#asphalt.wrapS = this.#asphalt.wrapT = RepeatWrapping;
     }
 
-    /** @param {number} delta @param {number} speed */
-    update(delta /*, speed */)
+    /** @param {number} delta */
+    update(delta)
     {
         if (!this.#ready) return;
 
-        if (this.#tiles[0].move(delta /*, speed */))
+        delta *= 50 / this.#tiles[0].depth;
+
+        if (this.#tiles[0].move(delta))
         {
             this.#tiles.splice(0, 1);
             this.#nextTile--;
         }
 
-        if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta /*, speed */))
+        if (this.#nextTile < 32 && this.#tiles[this.#nextTile].fade(delta))
         {
             this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex++));
             this.#nextTile++;
@@ -48,7 +50,7 @@ export default class Track
 
     get tile()
     {
-        return this.#tiles[1].matrix;
+        return this.#tiles[2].matrix;
     }
 
     dispose()

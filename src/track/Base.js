@@ -74,7 +74,7 @@ export default class Base
         const rand = Math.random();
         const width = tile?.width ?? 50;
         const x = rand < 0.6 && rand > 0.4 && randomInt(20, 50);
-        return new Vector3(x || width, 1, 50 /* randomInt(50, 100) */);
+        return new Vector3(x || width, 1, randomInt(50, 100));
     }
 
     /** @param {number | undefined} rotation */
@@ -123,8 +123,8 @@ export default class Base
         this.#computeCornersPosition();
     }
 
-    /** @param {number} delta @param {number} speed */
-    move(delta /*, speed */)
+    /** @param {number} delta */
+    move(delta)
     {
         let { opacity } = this.#mesh.material;
         opacity = Math.max(opacity - delta, 0);
@@ -145,8 +145,8 @@ export default class Base
         return false;
     }
 
-    /** @param {number} delta @param {number} speed */
-    fade(delta /*, speed */)
+    /** @param {number} delta */
+    fade(delta)
     {
         let { opacity } = this.#mesh.material;
         opacity = Math.min(opacity + delta, 1);
@@ -178,6 +178,11 @@ export default class Base
     get width()
     {
         return this.#mesh.geometry.parameters.width;
+    }
+
+    get depth()
+    {
+        return this.#mesh.geometry.parameters.depth;
     }
 
     #dispose()

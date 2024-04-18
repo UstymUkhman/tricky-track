@@ -50,8 +50,8 @@ export default class extends Level
     /** @type {Track} */ #track;
     /** @type {Mouse} */ #mouse;
 
+    /** @type {Clock} */ #clock;
     /** @type {Car} */ #car;
-    #clock = new Clock();
     #sky = new Sky();
 
     constructor()
@@ -84,6 +84,7 @@ export default class extends Level
             this.#track = new Track(() =>
             {
                 SAB.supported && Worker.post("Physics::Start");
+                this.#clock = new Clock();
                 RAF.pause = false;
             });
         });
@@ -234,6 +235,7 @@ export default class extends Level
         const { x, z } = this.#directionalLight.userData.position;
         const { rotation, direction, speed } = this.#car;
         const deltaTime = this.#clock.getDelta();
+        let deltaSpeed = deltaTime * 0.5;
 
         this.#water.material.uniforms.time.value += deltaTime;
 
@@ -243,10 +245,15 @@ export default class extends Level
         this.#sky.position.set(position.x, 0, position.z);
         this.#mouse.update(position, rotation, direction);
 
-        this.#track.update(deltaTime * 0.5, speed);
+        if (speed > 100)
+        {
+            deltaSpeed *= (speed | 0) * 0.01;
+        }
 
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
+
+        this.#track.update(deltaSpeed);
 
         !SAB.supported &&
             Physics.update(deltaTime);
