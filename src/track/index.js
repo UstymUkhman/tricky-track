@@ -4,8 +4,11 @@ import Base from "./Base";
 
 export default class Track
 {
+    #tileIndex = 0;
+    #nextTile = 30;
+    #active = false;
+
     /** @type {Base[]} */ #tiles = [];
-    #tileIndex = 0; #nextTile = 30; #ready = false;
     /** @type {import("three").Texture} */ #asphalt;
 
     /** @param {() => void} onLoad */
@@ -18,7 +21,7 @@ export default class Track
                 this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex));
             }
 
-            setTimeout(() => this.#ready = true, 3e3) && onLoad();
+            setTimeout(() => this.#active = true, 3e3) && onLoad();
         });
     }
 
@@ -31,7 +34,7 @@ export default class Track
     /** @param {number} delta */
     update(delta)
     {
-        if (!this.#ready) return;
+        if (!this.#active) return;
 
         delta *= 50 / this.#tiles[0].depth;
 
@@ -58,5 +61,6 @@ export default class Track
         this.#tiles.forEach(tile.dispose.bind(tile));
         this.#asphalt.dispose();
         this.#tiles.splice(0);
+        this.#active = false;
     }
 }

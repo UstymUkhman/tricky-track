@@ -10,7 +10,6 @@ import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
 // import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 
 import { PMREMGenerator } from 'three/src/extras/PMREMGenerator';
-import { PlaneHelper } from "three/src/helpers/PlaneHelper";
 import { Water } from "three/examples/jsm/objects/Water";
 import { RepeatWrapping } from "three/src/constants";
 import { MathUtils } from "three/src/math/MathUtils";
@@ -19,8 +18,9 @@ import { Vector3 } from "three/src/math/Vector3";
 import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Clock } from "three/src/core/Clock";
-
+import { Emitter } from "../utils/Events";
 import { Loader } from '../utils/Assets';
+
 import Viewport from "../utils/Viewport";
 import { HPI } from "../utils/Number";
 import Mouse from "../controls/Mouse";
@@ -34,9 +34,10 @@ import Level from "./Level";
 
 export default class extends Level
 {
+    #stopFollow = this.#stop.bind(this);
     #physicsInit = this.#setCamera.bind(this);
     #waterPlane = new Plane(new Vector3(0, 1, 0));
-    #directionalLight = new DirectionalLight(Color.NAMES.white, 5);
+    #directionalLight = new DirectionalLight(Color.NAMES.white, 2);
 
     /** @type {SSAARenderPass | undefined} */ #smaa;
     /** @type {ShaderPass | undefined} */ #fxaa;
@@ -60,7 +61,6 @@ export default class extends Level
 
         this.scene.background = new Color(Color.NAMES.skyblue);
         this.#pmrem = new PMREMGenerator(this.renderer);
-        Viewport.addResizeCallback(this.#scale);
         const sun = this.#createSky();
 
         this.#setEffectComposer();
@@ -69,6 +69,7 @@ export default class extends Level
 
         RAF.add(this.#tick);
         this.#setPhysics();
+        this.#addEvents();
     }
 
     #setCamera()
@@ -153,21 +154,21 @@ export default class extends Level
     /** @param {Vector3} sun */
     #createLights(sun)
     {
-        this.#directionalLight.userData.position = sun.clone().multiplyScalar(1e3).clone();
+        this.#directionalLight.userData.position = sun.clone().multiply(new Vector3(1, 3e3, 500));
         this.#directionalLight.position.copy(this.#directionalLight.userData.position);
 
         DEBUG && this.scene.add(new DirectionalLightHelper(
             this.#directionalLight, 10, Color.NAMES.yellow
         ));
 
-        this.#directionalLight.shadow.camera.near = 8;
+        this.#directionalLight.shadow.camera.near = 1;
         this.#directionalLight.shadow.camera.far = 1024;
         this.#directionalLight.shadow.mapSize.setScalar(1024);
 
-        this.#directionalLight.shadow.camera.top = 8;
-        this.#directionalLight.shadow.camera.right = 64;
-        this.#directionalLight.shadow.camera.bottom = -64;
-        this.#directionalLight.shadow.camera.left = -64;
+        this.#directionalLight.shadow.camera.top = 512;
+        this.#directionalLight.shadow.camera.right = 512;
+        this.#directionalLight.shadow.camera.bottom = -512;
+        this.#directionalLight.shadow.camera.left = -512;
 
         this.#directionalLight.rotation.set(1, 0, 0);
         this.#directionalLight.castShadow = true;
@@ -178,13 +179,10 @@ export default class extends Level
     async #createWater(sun)
     {
         const water = await Loader.loadTexture("water.jpg");
-        this.#waterPlane.translate(new Vector3(0, -50, 0));
+        this.#waterPlane.translate(new Vector3(0, -10, 0));
+
         const { white, lightseagreen } = Color.NAMES;
         water.wrapS = water.wrapT = RepeatWrapping;
-
-        DEBUG && this.scene.add(new PlaneHelper(
-            this.#waterPlane, 1e3, Color.NAMES.blueviolet
-        ));
 
         this.#water = new Water(new PlaneGeometry(1e3, 1e3),
         {
@@ -212,6 +210,12 @@ export default class extends Level
             : Worker.add("Physics::Init", this.#physicsInit).post("Physics::Init");
     }
 
+    #addEvents()
+    {
+        Emitter.add("Camera::StopFollow", this.#stopFollow);
+        Viewport.addResizeCallback(this.#scale);
+    }
+
     /** @override @param {number} width @param {number} height */
     #resize(width, height)
     {
@@ -231,8 +235,8 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        const position = this.#car.update(this.#waterPlane, this.#track.tile);
         const { x, z } = this.#directionalLight.userData.position;
+        const position = this.#car.update(this.#waterPlane);
         const { rotation, direction, speed } = this.#car;
         const deltaTime = this.#clock.getDelta();
         let deltaSpeed = deltaTime * 0.5;
@@ -262,6 +266,26 @@ export default class extends Level
         this.stats?.end();
     }
 
+    #stop()
+    {
+        console.log("Stop");
+
+        setTimeout(() =>
+        {
+            SAB.supported && Worker.post("Physics::Stop");
+            // this.#mouse.exitPointerLock();
+            RAF.pause = true;
+        }, 1e3);
+
+        setTimeout(() =>
+        {
+            SAB.supported && Worker.post("Physics::Start");
+            this.#car.reset(this.#track.tile);
+            // this.#mouse.enterPointerLock();
+            RAF.pause = false;
+        }, 3e3);
+    }
+
     /** @override */
     dispose()
     {
@@ -269,7 +293,9 @@ export default class extends Level
             ? Physics.dispose()
             : Worker.post("Physics::Dispose").dispose();
 
+        Emitter.remove("Camera::StopFollow", this.#stopFollow);
         Viewport.removeResizeCallback(this.#scale);
+
         this.#composer.dispose();
         RAF.remove(this.#tick);
 

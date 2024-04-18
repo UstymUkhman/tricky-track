@@ -31,8 +31,12 @@ Worker.onmessage = message =>
         break;
 
         case "Physics::Start":
-            clock = new Clock();
+            clock ??= new Clock();
             raf = requestAnimationFrame(simulationLoop);
+        break;
+
+        case "Physics::Stop":
+            cancelAnimationFrame(raf);
         break;
 
         case "Physics::Set::SharedArrayBuffer":

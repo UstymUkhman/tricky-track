@@ -95,20 +95,15 @@ export default class SkylineR32 extends Car
         ]);
     }
 
-    /** @override @param {import("three").Plane} water @param {import("three").Matrix4} tile */
-    update(water, tile)
+    /** @override @param {import("three").Plane} water */
+    update(water)
     {
         super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
 
         if (this.#active && super.intersects(water))
         {
-            tile.decompose(this.#tilePosition, this.#tileRotation, this.#tileScale);
-
+            Emitter.dispatch("Camera::StopFollow");
             this.#active = false;
-            this.#tilePosition.y = 5.14;
-
-            setTimeout(() => this.#active = true, 1e3);
-            super.reset(this.#tilePosition, this.#tileRotation);
         }
 
         return !SAB.supported
@@ -118,6 +113,16 @@ export default class SkylineR32 extends Car
                 SAB.transformBuffer[1],
                 SAB.transformBuffer[2]
             );
+    }
+
+    /** @override @param {import("three").Matrix4} tile */
+    reset(tile)
+    {
+        tile.decompose(this.#tilePosition, this.#tileRotation, this.#tileScale);
+        this.#tilePosition.y = 5.14;
+
+        setTimeout(() => this.#active = true, 1e3);
+        super.reset(this.#tilePosition, this.#tileRotation);
     }
 
     /** @override */

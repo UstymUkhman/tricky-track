@@ -16,13 +16,11 @@ export default class Mouse
     #pitch = new Object3D();
     #reset = Date.now() + 3e3;
 
-    #mousedown = this.#mouseDown.bind(this);
     #mousemove = this.#mouseMove.bind(this);
-
     #pointerlockchange = this.#pointerLockChange.bind(this);
 
     /** @param {import("three").PerspectiveCamera} camera */
-    constructor (camera, height = 5)
+    constructor (camera, height = 5.15)
     {
         this.#addEvents();
         this.#pitch.add(camera);
@@ -33,8 +31,8 @@ export default class Mouse
 
     #addEvents()
     {
-        document.addEventListener('pointerlockchange', this.#pointerlockchange, false);
-        window.addEventListener("mousedown", this.#mousedown, false);
+        document.addEventListener("pointerlockchange", this.#pointerlockchange, false);
+        window.addEventListener("mousedown", this.enterPointerLock, false);
         window.addEventListener("mousemove", this.#mousemove, false);
     }
 
@@ -43,11 +41,15 @@ export default class Mouse
         this.#locked = !this.#locked;
     }
 
-    /** @param {MouseEvent} event */
-    #mouseDown({ button })
+    enterPointerLock()
     {
-        if (button || document.pointerLockElement) return;
+        if (document.pointerLockElement) return;
         document.body.requestPointerLock();
+    }
+
+    exitPointerLock()
+    {
+        document.exitPointerLock();
     }
 
     /** @param {MouseEvent} event */
@@ -66,8 +68,8 @@ export default class Mouse
 
     #removeEvents()
     {
-        document.removeEventListener('pointerlockchange', this.#pointerlockchange, false);
-        window.removeEventListener("mousedown", this.#mousedown, false);
+        document.removeEventListener("pointerlockchange", this.#pointerlockchange, false);
+        window.removeEventListener("mousedown", this.enterPointerLock, false);
         window.removeEventListener("mousemove", this.#mousemove, false);
     }
 

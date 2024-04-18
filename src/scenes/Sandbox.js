@@ -94,19 +94,18 @@ export default class extends Level
 
         directional.castShadow = true;
         directional.shadow.camera.near = 1;
-        directional.shadow.camera.far = 200;
+        directional.shadow.camera.far = 512;
 
-        directional.shadow.camera.top = 60;
-        directional.shadow.camera.right = 100;
-        directional.shadow.camera.bottom = -50;
-        directional.shadow.camera.left = -100;
+        directional.shadow.camera.top = 128;
+        directional.shadow.camera.right = 128;
+        directional.shadow.camera.bottom = -128;
+        directional.shadow.camera.left = -128;
 
-        directional.shadow.mapSize.set(1024, 1024);
+        directional.shadow.mapSize.setScalar(512);
 
         directional.color.set(Color.NAMES.white);
-        directional.position.set(0, 35, -70);
-        directional.rotation.set(-1, 0, 0);
-        directional.intensity = 2;
+        directional.position.set(0, 100, 250);
+        directional.rotation.set(1, 0, 0);
 
         this.scene.add(directional);
         this.scene.add(helper);

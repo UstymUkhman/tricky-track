@@ -130,11 +130,10 @@ export default class Car
         this.#chassis.position.copy(position);
         this.#chassis.quaternion.copy(rotation);
 
-        Physics.resetVehicle(this.#chassis);
-        Emitter.dispatch("Car::Reset", this.rotation);
-
         this.#bbox.copy(this.#chassis.geometry.boundingBox)
             .applyMatrix4(this.#chassis.matrixWorld);
+
+        Physics.resetVehicle(this.#chassis);
     }
 
     /** @param {import("three").Plane} plane */
