@@ -3,12 +3,10 @@ import { Clock } from "three/src/core/Clock";
 
 /** @type {Physics | null} */ let raf, physics = null;
 /** @type {Worker} */ export const Worker = self;
-
-const clock = new Clock();
+/** @type {Clock} */ let clock;
 
 function simulationLoop()
 {
-    // ...or RAF.delta * 1e-3:
     physics.update(clock.getDelta());
     raf = requestAnimationFrame(simulationLoop);
 }
@@ -33,6 +31,7 @@ Worker.onmessage = message =>
         break;
 
         case "Physics::Start":
+            clock = new Clock();
             raf = requestAnimationFrame(simulationLoop);
         break;
 

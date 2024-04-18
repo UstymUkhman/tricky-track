@@ -372,7 +372,11 @@ export default class Physics
     {
         this.#updateVehicle();
         this.#updateKinematicBodies();
-        this.#world.stepSimulation(delta, 10);
+
+        // Variable tick rate, advance the simulation by exactly `delta` seconds.
+        // Works best in the browser since requestAnimationFrame `time`
+        // value is not fixed (https://stackoverflow.com/a/21273467)
+        this.#world.stepSimulation(delta, 0);
     }
 
     get vehicleTuning()

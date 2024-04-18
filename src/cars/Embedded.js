@@ -103,8 +103,8 @@ export default class Car
 
         origin = transform.getOrigin();
         rotation = transform.getRotation();
-        const x = origin.x(), y = origin.y(), z = origin.z();
 
+        const x = origin.x(), y = origin.y(), z = origin.z();
         this.#chassis.userData.position.set(x, y, z);
 
         this.#chassis.position.copy(this.#chassis.userData.position);
