@@ -38,9 +38,9 @@ export default class extends Level
     #physicsInit = this.#setCamera.bind(this);
     #waterPlane = new Plane(new Vector3(0, 1, 0));
     #directionalLight = new DirectionalLight(Color.NAMES.white, 2);
+    /** @type {(distance: number, end?: boolean) => void} */ #onPause;
 
     /** @type {SSAARenderPass | undefined} */ #smaa;
-    /** @type {(end: boolean) => void} */ #onPause;
     /** @type {ShaderPass | undefined} */ #fxaa;
     /** @type {EffectComposer} */ #composer;
     /** @type {PMREMGenerator} */ #pmrem;
@@ -55,8 +55,10 @@ export default class extends Level
     /** @type {Clock} */ #clock;
     /** @type {Car} */ #car;
     #sky = new Sky();
+    #distance = 0;
+    #time = 0;
 
-    /** @param {(end: boolean) => void} onPause */
+    /** @param {(distance: number, end?: boolean) => void} onPause */
     constructor(onPause)
     {
         super();
@@ -244,6 +246,8 @@ export default class extends Level
         const { rotation, direction, speed } = this.#car;
         let deltaSpeed = deltaTime * 0.5;
 
+        this.#time += deltaTime;
+        this.#distance += speed * this.#time * 1e-3;
         this.#water.material.uniforms.time.value += deltaTime;
 
         this.#directionalLight.position.x = position.x + x;
@@ -276,9 +280,14 @@ export default class extends Level
 
         if (!first)
         {
-            SAB.supported && Worker.post("Physics::Start");
-            restart && this.#car.reset(this.#track.tile);
             RAF.pause = false;
+            SAB.supported && Worker.post("Physics::Start");
+
+            if (restart)
+            {
+                this.#car.reset(this.#track.tile);
+                this.#distance = this.#time = 0;
+            }
         }
 
         setTimeout(() =>
@@ -289,8 +298,8 @@ export default class extends Level
 
     #pause()
     {
+        this.#onPause(this.#distance / this.#car.length - 8, !this.#car.active);
         SAB.supported && Worker.post("Physics::Stop");
-        this.#onPause(!this.#car.active);
         this.#track.active = false;
         RAF.pause = true;
     }

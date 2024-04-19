@@ -125,6 +125,11 @@ export default class SkylineR32 extends Car
         super.reset(this.#tilePosition, this.#tileRotation);
     }
 
+    get length()
+    {
+        return 33.25354 / 4.545;
+    }
+
     get active()
     {
         return this.#active;

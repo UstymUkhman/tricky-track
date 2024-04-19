@@ -3,7 +3,7 @@
   "description": "Racing game with procedurally generated track",
   "homepage": "https://github.com/UstymUkhman/tricky-track#readme",
   "main": "src/main.js",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "private": true,
