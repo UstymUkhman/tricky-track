@@ -121,8 +121,13 @@ export default class SkylineR32 extends Car
         tile.decompose(this.#tilePosition, this.#tileRotation, this.#tileScale);
         this.#tilePosition.y = 5.14;
 
-        setTimeout(() => this.#active = true, 1e3);
+        setTimeout(() => this.#active = true, 500);
         super.reset(this.#tilePosition, this.#tileRotation);
+    }
+
+    get active()
+    {
+        return this.#active;
     }
 
     /** @override */

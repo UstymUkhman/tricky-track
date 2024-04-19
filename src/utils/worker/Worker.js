@@ -7,7 +7,7 @@ import { Clock } from "three/src/core/Clock";
 
 function simulationLoop()
 {
-    physics.update(clock.getDelta());
+    physics.update(Math.min(clock.getDelta(), 0.017));
     raf = requestAnimationFrame(simulationLoop);
 }
 

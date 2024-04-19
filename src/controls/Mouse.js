@@ -16,14 +16,16 @@ export default class Mouse
     #pitch = new Object3D();
     #reset = Date.now() + 3e3;
 
+    /** @type {() => void} */ #onPause;
     #mousemove = this.#mouseMove.bind(this);
     #pointerlockchange = this.#pointerLockChange.bind(this);
 
-    /** @param {import("three").PerspectiveCamera} camera */
-    constructor (camera, height = 5.15)
+    /** @param {import("three").PerspectiveCamera} camera @param {() => void} onPause */
+    constructor (camera, onPause, height = 5.15)
     {
         this.#addEvents();
         this.#pitch.add(camera);
+        this.#onPause = onPause;
         this.#yaw.add(this.#pitch);
         this.#yaw.position.y = height;
         Emitter.dispatch("Scene::Add", this.#yaw);
@@ -32,13 +34,12 @@ export default class Mouse
     #addEvents()
     {
         document.addEventListener("pointerlockchange", this.#pointerlockchange, false);
-        window.addEventListener("mousedown", this.enterPointerLock, false);
         window.addEventListener("mousemove", this.#mousemove, false);
     }
 
     #pointerLockChange()
     {
-        this.#locked = !this.#locked;
+        !(this.#locked = !this.#locked) && this.#onPause();
     }
 
     enterPointerLock()
@@ -69,7 +70,6 @@ export default class Mouse
     #removeEvents()
     {
         document.removeEventListener("pointerlockchange", this.#pointerlockchange, false);
-        window.removeEventListener("mousedown", this.enterPointerLock, false);
         window.removeEventListener("mousemove", this.#mousemove, false);
     }
 

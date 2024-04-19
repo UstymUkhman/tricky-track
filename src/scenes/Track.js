@@ -40,6 +40,7 @@ export default class extends Level
     #directionalLight = new DirectionalLight(Color.NAMES.white, 2);
 
     /** @type {SSAARenderPass | undefined} */ #smaa;
+    /** @type {(end: boolean) => void} */ #onPause;
     /** @type {ShaderPass | undefined} */ #fxaa;
     /** @type {EffectComposer} */ #composer;
     /** @type {PMREMGenerator} */ #pmrem;
@@ -55,7 +56,8 @@ export default class extends Level
     /** @type {Car} */ #car;
     #sky = new Sky();
 
-    constructor()
+    /** @param {(end: boolean) => void} onPause */
+    constructor(onPause)
     {
         super();
 
@@ -64,6 +66,7 @@ export default class extends Level
         const sun = this.#createSky();
 
         this.#setEffectComposer();
+        this.#onPause = onPause;
         this.#createLights(sun);
         this.#createWater(sun);
 
@@ -77,7 +80,7 @@ export default class extends Level
         this.#car = new Car((chassis) =>
         {
             chassis.add(this.camera);
-            this.#mouse = new Mouse(this.camera);
+            this.#mouse = new Mouse(this.camera, this.#pause.bind(this));
 
             this.camera.position.set(0, 10, -35);
             this.camera.rotation.set(0.25, Math.PI, 0);
@@ -235,10 +238,10 @@ export default class extends Level
     {
         this.stats?.begin();
 
+        const deltaTime = Math.min(this.#clock.getDelta(), 0.017);
         const { x, z } = this.#directionalLight.userData.position;
         const position = this.#car.update(this.#waterPlane);
         const { rotation, direction, speed } = this.#car;
-        const deltaTime = this.#clock.getDelta();
         let deltaSpeed = deltaTime * 0.5;
 
         this.#water.material.uniforms.time.value += deltaTime;
@@ -266,24 +269,35 @@ export default class extends Level
         this.stats?.end();
     }
 
-    #stop()
+    /** @param {boolean} first, @param {boolean} restart */
+    start(first, restart)
     {
-        console.log("Stop");
+        this.#mouse.enterPointerLock();
 
-        setTimeout(() =>
-        {
-            SAB.supported && Worker.post("Physics::Stop");
-            // this.#mouse.exitPointerLock();
-            RAF.pause = true;
-        }, 1e3);
-
-        setTimeout(() =>
+        if (!first)
         {
             SAB.supported && Worker.post("Physics::Start");
-            this.#car.reset(this.#track.tile);
-            // this.#mouse.enterPointerLock();
+            restart && this.#car.reset(this.#track.tile);
             RAF.pause = false;
-        }, 3e3);
+        }
+
+        setTimeout(() =>
+        {
+            this.#track.active = true;
+        }, +(first || restart) * 2500 + 500);
+    }
+
+    #pause()
+    {
+        SAB.supported && Worker.post("Physics::Stop");
+        this.#onPause(!this.#car.active);
+        this.#track.active = false;
+        RAF.pause = true;
+    }
+
+    #stop()
+    {
+        setTimeout(this.#mouse.exitPointerLock, 1e3);
     }
 
     /** @override */

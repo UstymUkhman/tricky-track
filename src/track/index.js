@@ -6,7 +6,7 @@ export default class Track
 {
     #tileIndex = 0;
     #nextTile = 30;
-    #active = false;
+    active = false;
 
     /** @type {Base[]} */ #tiles = [];
     /** @type {import("three").Texture} */ #asphalt;
@@ -21,7 +21,7 @@ export default class Track
                 this.#tiles.push(new Base(this.#asphalt.clone(), this.#tiles[this.#tiles.length - 1], this.#tileIndex));
             }
 
-            setTimeout(() => this.#active = true, 3e3) && onLoad();
+            onLoad();
         });
     }
 
@@ -34,7 +34,7 @@ export default class Track
     /** @param {number} delta */
     update(delta)
     {
-        if (!this.#active) return;
+        if (!this.active) return;
 
         delta *= 50 / this.#tiles[0].depth;
 
@@ -53,7 +53,8 @@ export default class Track
 
     get tile()
     {
-        return this.#tiles[2].matrix;
+        const index = +this.#tiles[1].moved;
+        return this.#tiles[index + 1].matrix;
     }
 
     dispose()
@@ -61,6 +62,6 @@ export default class Track
         this.#tiles.forEach(tile.dispose.bind(tile));
         this.#asphalt.dispose();
         this.#tiles.splice(0);
-        this.#active = false;
+        this.active = false;
     }
 }

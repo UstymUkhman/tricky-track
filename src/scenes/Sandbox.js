@@ -147,7 +147,8 @@ export default class extends Level
     {
         this.stats?.begin();
 
-        !SAB.supported && Physics.update(this.#clock.getDelta());
+        const delta = Math.min(this.#clock.getDelta(), 0.017);
+        !SAB.supported && Physics.update(delta);
         this.#car.update(this.#groundPlane);
 
         this.#controls.update();

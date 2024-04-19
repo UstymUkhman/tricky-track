@@ -175,6 +175,11 @@ export default class Base
         return this.#mesh.position.z;
     }
 
+    get moved()
+    {
+        return this.#mesh.position.y < -0.505;
+    }
+
     get width()
     {
         return this.#mesh.geometry.parameters.width;
