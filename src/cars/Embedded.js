@@ -1,6 +1,5 @@
 import { Vector3 } from "three/src/math/Vector3";
 import { Box3 } from "three/src/math/Box3";
-import { Emitter } from "../utils/Events";
 import { Loader } from "../utils/Assets";
 import Physics from "../physics";
 
@@ -111,6 +110,8 @@ export default class Car
         this.#chassis.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
 
         this.#bbox.copy(this.#chassis.geometry.boundingBox).applyMatrix4(this.#chassis.matrixWorld);
+
+        return speed;
     }
 
     /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotation */

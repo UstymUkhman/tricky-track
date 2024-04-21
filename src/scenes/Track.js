@@ -8,8 +8,8 @@ import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass";
 import { DirectionalLight } from "three/src/lights/DirectionalLight";
 import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
 // import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
+import { PMREMGenerator } from "three/src/extras/PMREMGenerator";
 
-import { PMREMGenerator } from 'three/src/extras/PMREMGenerator';
 import { Water } from "three/examples/jsm/objects/Water";
 import { RepeatWrapping } from "three/src/constants";
 import { MathUtils } from "three/src/math/MathUtils";
@@ -19,9 +19,9 @@ import { Plane } from "three/src/math/Plane";
 import { Color } from "three/src/math/Color";
 import { Clock } from "three/src/core/Clock";
 import { Emitter } from "../utils/Events";
-import { Loader } from '../utils/Assets';
-
+import { Loader } from "../utils/Assets";
 import Viewport from "../utils/Viewport";
+
 import { HPI } from "../utils/Number";
 import Mouse from "../controls/Mouse";
 import Worker from "../utils/worker";
@@ -79,7 +79,7 @@ export default class extends Level
 
     #setCamera()
     {
-        this.#car = new Car((chassis) =>
+        this.#car = new Car(this.listener, (chassis) =>
         {
             chassis.add(this.camera);
             this.#mouse = new Mouse(this.camera, this.#pause.bind(this));
@@ -238,8 +238,6 @@ export default class extends Level
 
     #update()
     {
-        this.stats?.begin();
-
         const deltaTime = Math.min(this.#clock.getDelta(), 0.017);
         const { x, z } = this.#directionalLight.userData.position;
         const position = this.#car.update(this.#waterPlane);
@@ -256,10 +254,7 @@ export default class extends Level
         this.#sky.position.set(position.x, 0, position.z);
         this.#mouse.update(position, rotation, direction);
 
-        if (speed > 100)
-        {
-            deltaSpeed *= (speed | 0) * 0.01;
-        }
+        if (speed > 100) deltaSpeed *= (speed | 0) * 0.01;
 
         this.#water.position.x = position.x;
         this.#water.position.z = position.z;
@@ -270,13 +265,13 @@ export default class extends Level
             Physics.update(deltaTime);
 
         this.#composer.render();
-        this.stats?.end();
     }
 
     /** @param {boolean} first, @param {boolean} restart */
     start(first, restart)
     {
         this.#mouse.enterPointerLock();
+        this.#car.engine = true;
 
         if (!first)
         {
@@ -301,6 +296,7 @@ export default class extends Level
         this.#onPause(this.#distance / this.#car.length - 8, !this.#car.active);
         SAB.supported && Worker.post("Physics::Stop");
         this.#track.active = false;
+        this.#car.engine = false;
         RAF.pause = true;
     }
 

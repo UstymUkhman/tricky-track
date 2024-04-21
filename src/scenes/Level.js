@@ -1,5 +1,6 @@
 import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
 import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
+import { AudioListener } from "three/src/audio/AudioListener";
 import { AmbientLight } from "three/src/lights/AmbientLight";
 import Stats from "three/examples/jsm/libs/stats.module";
 import { Scene } from "three/src/scenes/Scene";
@@ -15,14 +16,14 @@ import {
 
 export default class Level
 {
-    /** @type {Stats} */ stats;
-    /** @type {WebGLRenderer} */ #renderer;
-    /** @type {PerspectiveCamera} */ #camera;
-
-    #removeGameObject = this.#remove.bind(this);
-    #addGameObject = this.#add.bind(this);
+    #listener = new AudioListener();
     #scale = this.#resize.bind(this);
+    #addGameObject = this.#add.bind(this);
+    #removeGameObject = this.#remove.bind(this);
 
+    /** @type {PerspectiveCamera} */ #camera;
+    /** @type {WebGLRenderer} */ #renderer;
+    /** @type {Stats} */ stats;
     #scene = new Scene();
 
     constructor()
@@ -36,7 +37,7 @@ export default class Level
 
     #createStats()
     {
-        if (document.body.lastElementChild?.id !== "stats")
+        if (import.meta.env.DEV && document.body.lastElementChild?.id !== "stats")
         {
             this.stats = new Stats();
             this.stats.showPanel(0);
@@ -48,6 +49,7 @@ export default class Level
     #createCamera()
     {
         this.#camera = new PerspectiveCamera(50, Viewport.size.ratio, 0.1, 500);
+        this.#camera.add(this.#listener);
     }
 
     #createLights()
@@ -164,6 +166,11 @@ export default class Level
         this.canvas.remove();
         this.#removeEvents();
         this.#scene.clear();
+    }
+
+    get listener()
+    {
+        return this.#listener;
     }
 
     get renderer()

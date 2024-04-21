@@ -1,6 +1,5 @@
 import { Vector3 } from "three/src/math/Vector3";
 import { Box3 } from "three/src/math/Box3";
-import { Emitter } from "../utils/Events";
 import { Loader } from "../utils/Assets";
 import Worker from "../utils/worker";
 import SAB from "../utils/SAB";
@@ -174,8 +173,9 @@ export default class Car
             SAB.transformBuffer[6]
         );
 
-        this.#bbox.copy(this.#chassis.geometry.boundingBox)
-            .applyMatrix4(this.#chassis.matrixWorld);
+        this.#bbox.copy(this.#chassis.geometry.boundingBox).applyMatrix4(this.#chassis.matrixWorld);
+
+        return speed;
     }
 
     /** @param {import("three").Vector3} position @param {import("three").Quaternion} rotation */

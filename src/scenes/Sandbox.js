@@ -62,7 +62,7 @@ export default class extends Level
         }
         else
         {
-            this.#car = new Car(() => RAF.pause = false);
+            this.#car = new Car(this.listener, () => RAF.pause = false);
             this.#createGround();
         }
     }
@@ -78,7 +78,7 @@ export default class extends Level
             position
         });
 
-        this.#car = new Car(() =>
+        this.#car = new Car(this.listener, () =>
         {
             Worker.post("Physics::Start");
             RAF.pause = false;

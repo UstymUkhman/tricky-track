@@ -2,12 +2,14 @@ import Car from "./";
 import SAB from "../utils/SAB";
 import Config from "./config.json";
 import Controls from "../controls";
+import { Loader } from "../utils/Assets";
 import { Emitter } from "../utils/Events";
 import { Color } from "three/src/math/Color";
 import { Mesh } from "three/src/objects/Mesh";
 import { Vector3 } from "three/src/math/Vector3";
 import { Quaternion } from "three/src/math/Quaternion";
 import { BoxGeometry } from "three/src/geometries/BoxGeometry";
+import { PositionalAudio } from "three/src/audio/PositionalAudio";
 import { MeshBasicMaterial } from "three/src/materials/MeshBasicMaterial";
 
 export default class SkylineR32 extends Car
@@ -19,18 +21,33 @@ export default class SkylineR32 extends Car
     #tileScale = new Vector3();
     #tilePosition = new Vector3();
     #tileRotation = new Quaternion();
+    /** @type {PositionalAudio} */ #engine;
 
-    /** @param {(chassis: Mesh) => void} onLoad */
-    constructor(onLoad)
+    /** @param {import("three").AudioListener} listener @param {(chassis: Mesh) => void} onLoad */
+    constructor(listener, onLoad)
     {
         super(Config.SkylineR32, onLoad);
+        this.#engine = new PositionalAudio(listener);
         this.#load();
     }
 
     /** @override */
     async #load()
     {
-        const models = await super.load("R32/chassis.glb", "R32/wheel.glb");
+        const [models, buffer] = await Promise.all(
+        [
+            super.load("R32/chassis.glb", "R32/wheel.glb"),
+            Loader.loadAudio("engine.mp3")
+        ]);
+
+        models[0].add(this.#engine
+            .setDistanceModel("exponential")
+            .setBuffer(buffer)
+            .setLoopStart(0.2)
+            .setLoopEnd(1.2)
+            .setLoop(true)
+        );
+
         return this.#add(models);
     }
 
@@ -98,7 +115,14 @@ export default class SkylineR32 extends Car
     /** @override @param {import("three").Plane} water */
     update(water)
     {
-        super.update(this.#controls.accelerate, this.#controls.steer, this.#controls.brake);
+        const speed = Math.abs(super.update(
+            this.#controls.accelerate,
+            this.#controls.steer,
+            this.#controls.brake
+        )) * 2e-3;
+
+        this.#engine.setPlaybackRate(Math.max(speed * 3, 1));
+        this.#engine.setVolume(Math.max(speed * 15, 1));
 
         if (this.#active && super.intersects(water))
         {
@@ -123,6 +147,13 @@ export default class SkylineR32 extends Car
 
         setTimeout(() => this.#active = true, 500);
         super.reset(this.#tilePosition, this.#tileRotation);
+    }
+
+    /** @param {boolean} start */
+    set engine(start)
+    {
+             if (start && !this.#engine.isPlaying) this.#engine.play();
+        else if (this.#engine.isPlaying && !start) this.#engine.pause();
     }
 
     get length()
